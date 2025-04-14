@@ -1,0 +1,57 @@
+Estado Atual do Projeto (Projeto 1)
+
+Estrutura de Arquivos:
+- app/
+  - index.tsx (Login)
+  - cadastro.tsx
+  - esqueceuSenha.tsx
+  - perfil.tsx
+  - editarPerfil.tsx
+  - times.tsx
+  - detalhesTime.tsx
+  - editarTime.tsx
+  - jogadores.tsx
+  - detalhesJogador.tsx
+  - editarJogador.tsx
+  - partidas.tsx
+  - detalhesPartida.tsx
+  - editarPartida.tsx
+  - estatisticas.tsx
+  - configuracoes.tsx
+  - sobre.tsx
+  - ajuda.tsx
+  - contato.tsx
+  - notificacoes.tsx
+  - mensagens.tsx
+  - chat.tsx
+  - calendario.tsx
+  - relatorios.tsx
+  - backup.tsx
+  - restauracao.tsx
+  - sincronizacao.tsx
+  - atualizacoes.tsx
+  - termos.tsx
+  - privacidade.tsx
+
+- components/
+  - AnimatedView.tsx
+
+- assets/
+  - fonts/
+  - images/
+
+Dependências Principais:
+- expo
+- expo-router
+- expo-linear-gradient
+- @expo/vector-icons
+- @react-native-async-storage/async-storage
+- react-native-mask-text
+- react-native-select-dropdown
+
+Configurações Atuais:
+- Estilo visual consistente
+- Animações suaves
+- Validações funcionais
+- Navegação fluida
+- Armazenamento local com AsyncStorage 
