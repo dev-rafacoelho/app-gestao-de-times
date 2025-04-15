@@ -1,0 +1,13 @@
+{
+  "extends": "./meu-novo-app/tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "*": ["*", "meu-novo-app/*"]
+    }
+  },
+  "include": [
+    "App.js",
+    "meu-novo-app/**/*"
+  ]
+}
