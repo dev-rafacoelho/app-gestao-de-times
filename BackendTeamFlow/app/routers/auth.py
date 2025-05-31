@@ -3,15 +3,15 @@ from sqlalchemy.orm import Session
 from typing import List
 
 from app.database.database import get_db
-from app.models.models import User, TipoUser
-from app.schemas.schemas import UserCreate, User as UserSchema, UserLogin, UserWithTipo
+from app.models.models import User, TipoUser, Clube
+from app.schemas.schemas import UserCreate, User as UserSchema, UserLogin, UserComplete
 
 router = APIRouter(
     prefix="/auth",
     tags=["auth"],
 )
 
-@router.post("/register", response_model=UserSchema, status_code=status.HTTP_201_CREATED)
+@router.post("/register", response_model=UserComplete, status_code=status.HTTP_201_CREATED)
 def register_user(user: UserCreate, db: Session = Depends(get_db)):
     # Check if email already exists
     db_user = db.query(User).filter(User.email == user.email).first()
@@ -29,6 +29,15 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
             detail="Invalid tipo_user_id"
         )
     
+    # If clube_id is provided, verify if it exists
+    if user.clube_id is not None:
+        clube = db.query(Clube).filter(Clube.id == user.clube_id).first()
+        if not clube:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Clube não encontrado"
+            )
+    
     # Create new user
     db_user = User(
         nome=user.nome,
@@ -36,7 +45,8 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
         data_nascimento=user.data_nascimento,
         telefone=user.telefone,
         senha=user.senha,  # In a real application, you would hash the password here
-        tipo_user_id=user.tipo_user_id
+        tipo_user_id=user.tipo_user_id,
+        clube_id=user.clube_id
     )
     
     db.add(db_user)
@@ -58,9 +68,10 @@ def login_user(user_credentials: UserLogin, db: Session = Depends(get_db)):
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    # Return user information including tipo_user_id
+    # Return user information including tipo_user_id and clube_id
     return {
         "message": "Login successful",
         "user_id": user.id,
-        "tipo_user_id": user.tipo_user_id
+        "tipo_user_id": user.tipo_user_id,
+        "clube_id": user.clube_id
     } 

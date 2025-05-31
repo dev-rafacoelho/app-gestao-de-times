@@ -23,6 +23,7 @@ class UserBase(BaseModel):
     data_nascimento: date
     telefone: str
     tipo_user_id: int
+    clube_id: Optional[int] = None
 
 class UserCreate(UserBase):
     senha: str
@@ -43,6 +44,13 @@ class UserWithTipo(User):
     class Config:
         from_attributes = True
 
+class UserComplete(UserWithTipo):
+    clube: Optional['Clube'] = None
+    clube_tecnico: Optional[list['Clube']] = None
+
+    class Config:
+        from_attributes = True
+
 # Clube schemas
 class ClubeBase(BaseModel):
     nome: str
@@ -54,6 +62,7 @@ class ClubeCreate(ClubeBase):
 class Clube(ClubeBase):
     id: int
     tecnico: User
+    usuarios: list[User] = []
 
     class Config:
         from_attributes = True 

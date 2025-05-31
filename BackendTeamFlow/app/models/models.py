@@ -23,9 +23,11 @@ class User(Base):
     telefone = Column(String, nullable=False)
     senha = Column(String, nullable=False)
     tipo_user_id = Column(Integer, ForeignKey("tipos_usuario.id"), nullable=False)
+    clube_id = Column(Integer, ForeignKey("clubes.id"), nullable=True)
     
-    # Relationship
+    # Relationships
     tipo_user = relationship("TipoUser", back_populates="users")
+    clube = relationship("Clube", foreign_keys=[clube_id], back_populates="usuarios")
 
 class Clube(Base):
     __tablename__ = "clubes"
@@ -34,5 +36,9 @@ class Clube(Base):
     nome = Column(String, nullable=False)
     tecnico_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
     
-    # Relationship
-    tecnico = relationship("User", foreign_keys=[tecnico_id]) 
+    # Relationships
+    tecnico = relationship("User", foreign_keys=[tecnico_id], back_populates="clube_tecnico")
+    usuarios = relationship("User", foreign_keys=[User.clube_id], back_populates="clube")
+
+    # Add back reference for tecnico relationship
+    User.clube_tecnico = relationship("Clube", foreign_keys=[tecnico_id], back_populates="tecnico", overlaps="clube") 
