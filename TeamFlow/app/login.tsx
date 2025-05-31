@@ -51,15 +51,13 @@ export default function Login() {
         }),
       });
 
-      const data: LoginResponse = await response.json();
+      const data = await response.json();
+      console.log("Response data:", data); // Debug log
 
-      if (response.ok) {
+      if (response.ok && data.user_id && data.tipo_user_id) {
         // Armazena os dados do usuário
-        await AsyncStorage.setItem("user_id", data.user_id.toString());
-        await AsyncStorage.setItem(
-          "tipo_user_id",
-          data.tipo_user_id.toString()
-        );
+        await AsyncStorage.setItem("user_id", String(data.user_id));
+        await AsyncStorage.setItem("tipo_user_id", String(data.tipo_user_id));
 
         // Redireciona baseado no tipo de usuário
         switch (data.tipo_user_id) {
@@ -73,11 +71,16 @@ export default function Login() {
             router.replace("/menu");
         }
       } else {
-        Alert.alert("Erro", data.message || "Erro ao fazer login");
+        const errorMessage = data.message || "Credenciais inválidas";
+        console.log("Login error:", errorMessage); // Debug log
+        Alert.alert("Erro", errorMessage);
       }
     } catch (error) {
-      Alert.alert("Erro", "Erro ao conectar com o servidor");
-      console.error(error);
+      console.error("Login error:", error); // Debug log
+      Alert.alert(
+        "Erro",
+        "Erro ao conectar com o servidor. Por favor, tente novamente."
+      );
     } finally {
       setIsLoading(false);
     }
