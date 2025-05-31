@@ -29,15 +29,6 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
             detail="Invalid tipo_user_id"
         )
     
-    # If clube_id is provided, verify if it exists
-    if user.clube_id is not None:
-        clube = db.query(Clube).filter(Clube.id == user.clube_id).first()
-        if not clube:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Clube não encontrado"
-            )
-    
     # Create new user
     db_user = User(
         nome=user.nome,
@@ -46,7 +37,7 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
         telefone=user.telefone,
         senha=user.senha,  # In a real application, you would hash the password here
         tipo_user_id=user.tipo_user_id,
-        clube_id=user.clube_id
+        clube_id=None  # Inicialmente, nenhum usuário tem clube
     )
     
     db.add(db_user)

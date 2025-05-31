@@ -20,6 +20,7 @@ class TipoUser(TipoUserBase):
 class ClubeBase(BaseModel):
     nome: str
     tecnico_id: int
+    procurando_jogadores: bool = False
 
 class ClubeCreate(ClubeBase):
     pass

@@ -8,9 +8,14 @@ import {
   SafeAreaView,
   StatusBar,
   ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+  TouchableWithoutFeedback,
+  Keyboard,
 } from "react-native";
 import { Link, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { API_URL } from "../constants/Environment";
 
 export default function Register() {
   const router = useRouter();
@@ -20,6 +25,7 @@ export default function Register() {
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [userType, setUserType] = useState<"jogador" | "tecnico" | null>(null);
 
   // Formatador de telefone: (XX)XXXXXXXXX
   const formatPhone = (text) => {
@@ -63,115 +69,233 @@ export default function Register() {
     setBirthDate(formatBirthDate(text));
   };
 
+  const handleRegister = async () => {
+    try {
+      // Validar campos obrigatórios
+      if (
+        !fullName ||
+        !email ||
+        !birthDate ||
+        !phone ||
+        !password ||
+        !userType
+      ) {
+        alert("Por favor, preencha todos os campos");
+        return;
+      }
+
+      // Converter a data do formato DD/MM/YYYY para YYYY-MM-DD
+      const [day, month, year] = birthDate.split("/");
+      const formattedDate = `${year}-${month}-${day}`;
+
+      // Preparar dados para envio
+      const userData = {
+        nome: fullName,
+        email,
+        data_nascimento: formattedDate,
+        telefone: phone.replace(/[^0-9]/g, ""), // Remove caracteres não numéricos
+        senha: password,
+        tipo_user_id: userType === "tecnico" ? 2 : 1, // 2 para técnico, 1 para jogador
+      };
+
+      // Fazer requisição para a API
+      const response = await fetch(`${API_URL}/auth/register`, {
+        method: "POST",
+        headers: {
+          accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(userData),
+      });
+
+      const responseData = await response.json();
+
+      if (!response.ok) {
+        throw new Error(responseData.detail || "Erro ao registrar usuário");
+      }
+
+      // Registro bem sucedido
+      alert("Registro realizado com sucesso!");
+      router.replace("/login");
+    } catch (error) {
+      console.error("Erro no registro:", error);
+      alert(error.message || "Erro ao registrar usuário");
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-
-      <ScrollView contentContainerStyle={styles.scrollView}>
-        <View style={styles.card}>
-          {/* Header with back button */}
-          <View style={styles.header}>
-            <TouchableOpacity
-              style={styles.backButton}
-              onPress={() => router.back()}
-            >
-              <Ionicons name="arrow-back" size={24} color="#000" />
-            </TouchableOpacity>
-
-            <Text style={styles.title}>Registrar</Text>
-          </View>
-
-          {/* Login link */}
-          <View style={styles.loginContainer}>
-            <Text style={styles.loginText}>Já possui uma conta? </Text>
-            <Link href="/login" style={styles.loginLink}>
-              Login
-            </Link>
-          </View>
-
-          {/* Registration form */}
-          <View style={styles.formContainer}>
-            <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Nome completo</Text>
-              <TextInput
-                style={styles.textInput}
-                value={fullName}
-                onChangeText={setFullName}
-                placeholder="Lois Becket"
-              />
-            </View>
-
-            <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>E-mail</Text>
-              <TextInput
-                style={styles.textInput}
-                value={email}
-                onChangeText={setEmail}
-                placeholder="Loisbecket@gmail.com"
-                autoCapitalize="none"
-                keyboardType="email-address"
-              />
-            </View>
-
-            <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Data de nascimento</Text>
-              <View style={styles.dateInputContainer}>
-                <TextInput
-                  style={styles.textInput}
-                  value={birthDate}
-                  onChangeText={handleBirthDateChange}
-                  placeholder="DD/MM/AAAA"
-                  keyboardType="numeric"
-                  maxLength={10}
-                />
-                <TouchableOpacity style={styles.calendarIcon}>
-                  <Ionicons name="calendar-outline" size={24} color="#999" />
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Telefone</Text>
-              <TextInput
-                style={styles.textInput}
-                value={phone}
-                onChangeText={handlePhoneChange}
-                placeholder="(XX)XXXXXXXXX"
-                keyboardType="phone-pad"
-                maxLength={13}
-              />
-            </View>
-
-            <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Senha</Text>
-              <View style={styles.passwordContainer}>
-                <TextInput
-                  style={[styles.textInput, styles.passwordInput]}
-                  value={password}
-                  onChangeText={setPassword}
-                  placeholder="••••••"
-                  secureTextEntry={!showPassword}
-                />
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
+      >
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <ScrollView
+            contentContainerStyle={styles.scrollView}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={styles.card}>
+              {/* Header with back button */}
+              <View style={styles.header}>
                 <TouchableOpacity
-                  style={styles.eyeIcon}
-                  onPress={() => setShowPassword(!showPassword)}
+                  style={styles.backButton}
+                  onPress={() => router.back()}
                 >
-                  <Ionicons
-                    name={showPassword ? "eye-off" : "eye"}
-                    size={24}
-                    color="#999"
-                  />
+                  <Ionicons name="arrow-back" size={24} color="#000" />
                 </TouchableOpacity>
-              </View>
-            </View>
-          </View>
 
-          {/* Register button */}
-          <TouchableOpacity style={styles.registerButton}>
-            <Text style={styles.registerButtonText}>Register</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
+                <Text style={styles.title}>Registrar</Text>
+              </View>
+
+              {/* Login link */}
+              <View style={styles.loginContainer}>
+                <Text style={styles.loginText}>Já possui uma conta? </Text>
+                <Link href="/login" style={styles.loginLink}>
+                  Login
+                </Link>
+              </View>
+
+              {/* User Type Selection */}
+              <View style={styles.userTypeContainer}>
+                <Text style={styles.inputLabel}>Tipo de Usuário</Text>
+                <View style={styles.userTypeButtons}>
+                  <TouchableOpacity
+                    style={[
+                      styles.userTypeButton,
+                      userType === "jogador" && styles.userTypeButtonSelected,
+                    ]}
+                    onPress={() => setUserType("jogador")}
+                  >
+                    <Text
+                      style={[
+                        styles.userTypeButtonText,
+                        userType === "jogador" &&
+                          styles.userTypeButtonTextSelected,
+                      ]}
+                    >
+                      Jogador
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[
+                      styles.userTypeButton,
+                      userType === "tecnico" && styles.userTypeButtonSelected,
+                    ]}
+                    onPress={() => setUserType("tecnico")}
+                  >
+                    <Text
+                      style={[
+                        styles.userTypeButtonText,
+                        userType === "tecnico" &&
+                          styles.userTypeButtonTextSelected,
+                      ]}
+                    >
+                      Técnico
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* Registration form */}
+              <View style={styles.formContainer}>
+                <View style={styles.inputContainer}>
+                  <Text style={styles.inputLabel}>Nome completo</Text>
+                  <TextInput
+                    style={styles.textInput}
+                    value={fullName}
+                    onChangeText={setFullName}
+                    placeholder="Lois Becket"
+                    returnKeyType="next"
+                  />
+                </View>
+
+                <View style={styles.inputContainer}>
+                  <Text style={styles.inputLabel}>E-mail</Text>
+                  <TextInput
+                    style={styles.textInput}
+                    value={email}
+                    onChangeText={setEmail}
+                    placeholder="Loisbecket@gmail.com"
+                    autoCapitalize="none"
+                    keyboardType="email-address"
+                    returnKeyType="next"
+                  />
+                </View>
+
+                <View style={styles.inputContainer}>
+                  <Text style={styles.inputLabel}>Data de nascimento</Text>
+                  <View style={styles.dateInputContainer}>
+                    <TextInput
+                      style={styles.textInput}
+                      value={birthDate}
+                      onChangeText={handleBirthDateChange}
+                      placeholder="DD/MM/AAAA"
+                      keyboardType="numeric"
+                      maxLength={10}
+                      returnKeyType="next"
+                    />
+                    <TouchableOpacity style={styles.calendarIcon}>
+                      <Ionicons
+                        name="calendar-outline"
+                        size={24}
+                        color="#999"
+                      />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                <View style={styles.inputContainer}>
+                  <Text style={styles.inputLabel}>Telefone</Text>
+                  <TextInput
+                    style={styles.textInput}
+                    value={phone}
+                    onChangeText={handlePhoneChange}
+                    placeholder="(XX)XXXXXXXXX"
+                    keyboardType="phone-pad"
+                    maxLength={13}
+                    returnKeyType="next"
+                  />
+                </View>
+
+                <View style={styles.inputContainer}>
+                  <Text style={styles.inputLabel}>Senha</Text>
+                  <View style={styles.passwordContainer}>
+                    <TextInput
+                      style={[styles.textInput, styles.passwordInput]}
+                      value={password}
+                      onChangeText={setPassword}
+                      placeholder="••••••"
+                      secureTextEntry={!showPassword}
+                      returnKeyType="done"
+                      onSubmitEditing={handleRegister}
+                    />
+                    <TouchableOpacity
+                      style={styles.eyeIcon}
+                      onPress={() => setShowPassword(!showPassword)}
+                    >
+                      <Ionicons
+                        name={showPassword ? "eye-off" : "eye"}
+                        size={24}
+                        color="#999"
+                      />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </View>
+
+              {/* Register button */}
+              <TouchableOpacity
+                style={styles.registerButton}
+                onPress={handleRegister}
+              >
+                <Text style={styles.registerButtonText}>Registrar</Text>
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -191,6 +315,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 20,
     width: "100%",
+    marginBottom: 20,
   },
   header: {
     flexDirection: "row",
@@ -215,6 +340,34 @@ const styles = StyleSheet.create({
   loginLink: {
     color: "#1a41aa",
     fontWeight: "bold",
+  },
+  userTypeContainer: {
+    marginBottom: 20,
+  },
+  userTypeButtons: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 5,
+  },
+  userTypeButton: {
+    flex: 1,
+    padding: 12,
+    borderRadius: 5,
+    borderWidth: 1,
+    borderColor: "#ddd",
+    marginHorizontal: 5,
+    alignItems: "center",
+  },
+  userTypeButtonSelected: {
+    backgroundColor: "#1a41aa",
+    borderColor: "#1a41aa",
+  },
+  userTypeButtonText: {
+    color: "#666",
+    fontSize: 16,
+  },
+  userTypeButtonTextSelected: {
+    color: "#fff",
   },
   formContainer: {
     marginBottom: 20,
@@ -255,8 +408,8 @@ const styles = StyleSheet.create({
   },
   registerButton: {
     backgroundColor: "#1a41aa",
-    borderRadius: 5,
     padding: 15,
+    borderRadius: 5,
     alignItems: "center",
   },
   registerButtonText: {

@@ -22,6 +22,20 @@ def get_clubes(nome: str = None, db: Session = Depends(get_db)):
     clubes = query.all()
     return clubes
 
+@router.get("/procurando-jogadores", response_model=List[ClubeSchema])
+def get_clubes_procurando_jogadores(nome: str = None, db: Session = Depends(get_db)):
+    """
+    Retorna todos os clubes que estão procurando jogadores.
+    Se o parâmetro 'nome' for fornecido, filtra também pelo nome do clube.
+    """
+    query = db.query(Clube).filter(Clube.procurando_jogadores == True)
+    
+    if nome:
+        query = query.filter(Clube.nome.ilike(f"%{nome}%"))
+    
+    clubes = query.all()
+    return clubes
+
 @router.post("/", response_model=ClubeSchema, status_code=status.HTTP_201_CREATED)
 def create_clube(clube: ClubeCreate, db: Session = Depends(get_db)):
     # Verificar se o técnico existe e é do tipo técnico (tipo_user_id == 2)

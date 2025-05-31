@@ -23,7 +23,7 @@ class User(Base):
     telefone = Column(String, nullable=False)
     senha = Column(String, nullable=False)
     tipo_user_id = Column(Integer, ForeignKey("tipos_usuario.id"), nullable=False)
-    clube_id = Column(Integer, ForeignKey("clubes.id"), nullable=True)
+    clube_id = Column(Integer, ForeignKey("clubes.id"), nullable=True, default=None)
     
     # Relationships
     tipo_user = relationship("TipoUser", back_populates="users")
@@ -35,6 +35,7 @@ class Clube(Base):
     id = Column(Integer, primary_key=True, index=True)
     nome = Column(String, nullable=False)
     tecnico_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
+    procurando_jogadores = Column(Boolean, default=False)
     
     # Relationships
     tecnico = relationship("User", foreign_keys=[tecnico_id], back_populates="clube_tecnico")
