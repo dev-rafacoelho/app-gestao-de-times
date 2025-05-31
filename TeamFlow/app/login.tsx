@@ -14,6 +14,13 @@ import {
 } from "react-native";
 import LogoPlaceholder from "../components/LogoPlaceholder";
 import { API_URL } from "../constants/Config";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+interface LoginResponse {
+  message: string;
+  user_id: number;
+  tipo_user_id: number;
+}
 
 export default function Login() {
   const router = useRouter();
@@ -44,16 +51,33 @@ export default function Login() {
         }),
       });
 
-      const data = await response.json();
+      const data: LoginResponse = await response.json();
 
       if (response.ok) {
-        // Aqui você pode armazenar o token se necessário
-        router.replace("/menu");
+        // Armazena os dados do usuário
+        await AsyncStorage.setItem("user_id", data.user_id.toString());
+        await AsyncStorage.setItem(
+          "tipo_user_id",
+          data.tipo_user_id.toString()
+        );
+
+        // Redireciona baseado no tipo de usuário
+        switch (data.tipo_user_id) {
+          case 1: // Admin
+            router.replace("/admin/dashboard");
+            break;
+          case 2: // Usuário comum
+            router.replace("/user/dashboard");
+            break;
+          default:
+            router.replace("/menu");
+        }
       } else {
         Alert.alert("Erro", data.message || "Erro ao fazer login");
       }
     } catch (error) {
       Alert.alert("Erro", "Erro ao conectar com o servidor");
+      console.error(error);
     } finally {
       setIsLoading(false);
     }
