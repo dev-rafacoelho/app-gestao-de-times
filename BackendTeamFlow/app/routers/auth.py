@@ -58,5 +58,9 @@ def login_user(user_credentials: UserLogin, db: Session = Depends(get_db)):
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    # In a real application, you would generate and return a JWT token here
-    return {"message": "Login successful", "user_id": user.id} 
+    # Return user information including tipo_user_id
+    return {
+        "message": "Login successful",
+        "user_id": user.id,
+        "tipo_user_id": user.tipo_user_id
+    } 
