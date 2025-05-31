@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 
 from app.database.database import engine, get_db
 from app.database.database import Base
-from app.routers import auth, users, tipo_users
+from app.routers import auth, users, tipo_users, clubes
 
 # Load environment variables
 load_dotenv()
@@ -20,6 +20,7 @@ app = FastAPI(title=os.getenv("APP_NAME", "API de Gerenciamento de Times"))
 app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(tipo_users.router)
+app.include_router(clubes.router)
 
 @app.get("/")
 def read_root():

@@ -25,4 +25,14 @@ class User(Base):
     tipo_user_id = Column(Integer, ForeignKey("tipos_usuario.id"), nullable=False)
     
     # Relationship
-    tipo_user = relationship("TipoUser", back_populates="users") 
+    tipo_user = relationship("TipoUser", back_populates="users")
+
+class Clube(Base):
+    __tablename__ = "clubes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    nome = Column(String, nullable=False)
+    tecnico_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
+    
+    # Relationship
+    tecnico = relationship("User", foreign_keys=[tecnico_id]) 

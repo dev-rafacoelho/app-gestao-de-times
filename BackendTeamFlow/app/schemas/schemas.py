@@ -41,4 +41,19 @@ class UserWithTipo(User):
     tipo_user: TipoUser
     
     class Config:
+        from_attributes = True
+
+# Clube schemas
+class ClubeBase(BaseModel):
+    nome: str
+    tecnico_id: int
+
+class ClubeCreate(ClubeBase):
+    pass
+
+class Clube(ClubeBase):
+    id: int
+    tecnico: User
+
+    class Config:
         from_attributes = True 
