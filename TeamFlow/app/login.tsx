@@ -1,24 +1,63 @@
+import { Ionicons } from "@expo/vector-icons";
+import Checkbox from "expo-checkbox";
+import { Link, useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
+  Alert,
+  SafeAreaView,
+  StatusBar,
   StyleSheet,
-  View,
   Text,
   TextInput,
   TouchableOpacity,
-  StatusBar,
-  SafeAreaView,
-  TouchableWithoutFeedback,
+  View,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import Checkbox from "expo-checkbox";
-import { Link } from "expo-router";
 import LogoPlaceholder from "../components/LogoPlaceholder";
+import { API_URL } from "../constants/Config";
 
 export default function Login() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isChecked, setIsChecked] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert("Erro", "Por favor, preencha todos os campos");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const response = await fetch(`${API_URL}/auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          accept: "application/json",
+        },
+        body: JSON.stringify({
+          email: email,
+          senha: password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Aqui você pode armazenar o token se necessário
+        router.replace("/menu");
+      } else {
+        Alert.alert("Erro", data.message || "Erro ao fazer login");
+      }
+    } catch (error) {
+      Alert.alert("Erro", "Erro ao conectar com o servidor");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -96,8 +135,14 @@ export default function Login() {
           <Text style={styles.checkboxLabel}>Lembrar-se de mim</Text>
         </View>
 
-        <TouchableOpacity style={styles.loginButton}>
-          <Text style={styles.loginButtonText}>Entrar</Text>
+        <TouchableOpacity
+          style={[styles.loginButton, isLoading && styles.loginButtonDisabled]}
+          onPress={handleLogin}
+          disabled={isLoading}
+        >
+          <Text style={styles.loginButtonText}>
+            {isLoading ? "Entrando..." : "Entrar"}
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -207,6 +252,9 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     padding: 15,
     alignItems: "center",
+  },
+  loginButtonDisabled: {
+    backgroundColor: "#999",
   },
   loginButtonText: {
     color: "#fff",

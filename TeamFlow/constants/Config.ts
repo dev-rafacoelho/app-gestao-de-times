@@ -1,0 +1,1 @@
+export const API_URL = 'https://teste-faculdade-backend.lvbgea.easypanel.host'; 
