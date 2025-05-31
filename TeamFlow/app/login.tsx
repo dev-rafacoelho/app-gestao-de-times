@@ -61,14 +61,14 @@ export default function Login() {
 
         // Redireciona baseado no tipo de usuário
         switch (data.tipo_user_id) {
-          case 1: // Admin
-            router.replace("/admin/dashboard");
+          case 1: // Jogador
+            router.replace("/menus/player-menu");
             break;
-          case 2: // Usuário comum
-            router.replace("/user/dashboard");
+          case 2: // Técnico
+            router.replace("/menus/coach-menu");
             break;
           default:
-            router.replace("/menu");
+            Alert.alert("Erro", "Tipo de usuário não reconhecido");
         }
       } else {
         const errorMessage = data.message || "Credenciais inválidas";
