@@ -1,6 +1,6 @@
 from pydantic import BaseModel, EmailStr
 from datetime import date
-from typing import Optional
+from typing import Optional, List, ForwardRef
 
 # TipoUser schemas
 class TipoUserBase(BaseModel):
@@ -15,6 +15,14 @@ class TipoUser(TipoUserBase):
 
     class Config:
         from_attributes = True
+
+# Clube schemas - Base definition
+class ClubeBase(BaseModel):
+    nome: str
+    tecnico_id: int
+
+class ClubeCreate(ClubeBase):
+    pass
 
 # User schemas
 class UserBase(BaseModel):
@@ -44,25 +52,23 @@ class UserWithTipo(User):
     class Config:
         from_attributes = True
 
-class UserComplete(UserWithTipo):
-    clube: Optional['Clube'] = None
-    clube_tecnico: Optional[list['Clube']] = None
+# Clube schema with complete definition
+class Clube(ClubeBase):
+    id: int
+    tecnico: User
+    usuarios: List[User] = []
 
     class Config:
         from_attributes = True
 
-# Clube schemas
-class ClubeBase(BaseModel):
-    nome: str
-    tecnico_id: int
-
-class ClubeCreate(ClubeBase):
-    pass
-
-class Clube(ClubeBase):
-    id: int
-    tecnico: User
-    usuarios: list[User] = []
+# Complete User schema with clube reference
+class UserComplete(UserWithTipo):
+    clube: Optional[Clube] = None
+    clube_tecnico: Optional[List[Clube]] = []
 
     class Config:
-        from_attributes = True 
+        from_attributes = True
+
+# Update forward refs
+Clube.model_rebuild()
+UserComplete.model_rebuild() 
