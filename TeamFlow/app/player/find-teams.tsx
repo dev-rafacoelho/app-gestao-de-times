@@ -45,27 +45,23 @@ export default function FindTeams() {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  // Fetch teams when debounced query changes
+  // Fetch teams when component mounts and when debounced query changes
   useEffect(() => {
     const fetchTeams = async () => {
-      if (!debouncedQuery.trim()) {
-        setTeams([]);
-        return;
-      }
-
       setLoading(true);
       try {
-        const response = await fetch(
-          `${API_URL}/clubes/procurando-jogadores?nome=${encodeURIComponent(
-            debouncedQuery
-          )}`,
-          {
-            method: "GET",
-            headers: {
-              accept: "application/json",
-            },
-          }
-        );
+        const url = debouncedQuery.trim()
+          ? `${API_URL}/clubes/procurando-jogadores?nome=${encodeURIComponent(
+              debouncedQuery
+            )}`
+          : `${API_URL}/clubes/procurando-jogadores`;
+
+        const response = await fetch(url, {
+          method: "GET",
+          headers: {
+            accept: "application/json",
+          },
+        });
 
         if (response.ok) {
           const data = await response.json();
@@ -179,7 +175,7 @@ export default function FindTeams() {
               <Text style={styles.emptyText}>
                 {searchQuery
                   ? "Nenhum time encontrado com esse nome"
-                  : "Digite o nome de um time para buscar"}
+                  : "Nenhum time disponível no momento"}
               </Text>
             </View>
           }
