@@ -18,7 +18,7 @@ class ClubeInResponse(BaseModel):
     id: int
     nome: str
     tecnico_id: int
-    procurando_jogadores: Optional[bool] = False
+    procurando_jogadores: bool
     
     class Config:
         from_attributes = True

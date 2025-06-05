@@ -2,10 +2,15 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
 from sqlalchemy import or_
+from pydantic import BaseModel
 
 from app.database.database import get_db
 from app.models.models import Clube, User
 from app.schemas.schemas import Clube as ClubeSchema, ClubeCreate
+
+# Schema para atualizar apenas o status procurando_jogadores
+class UpdateProcurandoJogadores(BaseModel):
+    procurando_jogadores: bool
 
 router = APIRouter(
     prefix="/clubes",
@@ -85,6 +90,24 @@ def update_clube(clube_id: int, clube: ClubeCreate, db: Session = Depends(get_db
     for key, value in clube.dict().items():
         setattr(db_clube, key, value)
     
+    db.commit()
+    db.refresh(db_clube)
+    return db_clube
+
+@router.patch("/{clube_id}/procurando-jogadores", response_model=ClubeSchema)
+def update_procurando_jogadores(
+    clube_id: int, 
+    update_data: UpdateProcurandoJogadores, 
+    db: Session = Depends(get_db)
+):
+    """
+    Atualiza apenas o status 'procurando_jogadores' de um clube.
+    """
+    db_clube = db.query(Clube).filter(Clube.id == clube_id).first()
+    if db_clube is None:
+        raise HTTPException(status_code=404, detail="Clube não encontrado")
+    
+    db_clube.procurando_jogadores = update_data.procurando_jogadores
     db.commit()
     db.refresh(db_clube)
     return db_clube

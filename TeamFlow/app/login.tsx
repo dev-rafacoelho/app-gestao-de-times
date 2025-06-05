@@ -20,6 +20,7 @@ interface LoginResponse {
   message: string;
   user_id: number;
   tipo_user_id: number;
+  clube_id?: number;
 }
 
 export default function Login() {
@@ -59,16 +60,32 @@ export default function Login() {
         await AsyncStorage.setItem("user_id", String(data.user_id));
         await AsyncStorage.setItem("tipo_user_id", String(data.tipo_user_id));
 
+        // Armazenar clube_id se existir
+        if (data.clube_id) {
+          await AsyncStorage.setItem("clube_id", String(data.clube_id));
+        } else {
+          // Remover clube_id se não existir (usuário não faz parte de nenhum clube)
+          await AsyncStorage.removeItem("clube_id");
+        }
+
         // Verificar se os dados foram salvos
         const savedUserId = await AsyncStorage.getItem("user_id");
         const savedTipoUserId = await AsyncStorage.getItem("tipo_user_id");
+        const savedClubeId = await AsyncStorage.getItem("clube_id");
         console.log("Debug - Saved user_id:", savedUserId); // Debug log
         console.log("Debug - Saved tipo_user_id:", savedTipoUserId); // Debug log
+        console.log("Debug - Saved clube_id:", savedClubeId); // Debug log
 
         // Redireciona baseado no tipo de usuário
         switch (data.tipo_user_id) {
           case 1: // Jogador
-            router.replace("/menus/player-menu");
+            // Se o jogador já faz parte de um clube, vai direto para o menu do jogador
+            // Se não faz parte, vai para a tela de procurar times
+            if (data.clube_id) {
+              router.replace("/menus/player-menu");
+            } else {
+              router.replace("/player/find-teams");
+            }
             break;
           case 2: // Técnico
             router.replace("/menus/coach-menu");

@@ -35,7 +35,7 @@ class Clube(Base):
     id = Column(Integer, primary_key=True, index=True)
     nome = Column(String, nullable=False)
     tecnico_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
-    procurando_jogadores = Column(Boolean, default=False, nullable=False)
+    procurando_jogadores = Column(Boolean, nullable=False)
     
     # Relationships
     tecnico = relationship("User", foreign_keys=[tecnico_id], back_populates="clube_tecnico")
