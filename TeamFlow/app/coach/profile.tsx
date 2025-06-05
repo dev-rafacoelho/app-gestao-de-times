@@ -28,7 +28,7 @@ interface UserProfile {
   };
 }
 
-export default function PlayerProfile() {
+export default function CoachProfile() {
   const router = useRouter();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);

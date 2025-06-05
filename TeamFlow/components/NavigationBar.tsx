@@ -121,7 +121,7 @@ export default function NavigationBar() {
       <>
         <TouchableOpacity
           style={styles.leftButton}
-          onPress={() => handleNavigation("/player/training")}
+          onPress={() => handleNavigation("/player/trainings")}
         >
           <Animated.View
             style={{
@@ -135,7 +135,7 @@ export default function NavigationBar() {
               ],
             }}
           >
-            <Ionicons name="basketball" size={24} color="#1a41aa" />
+            <Ionicons name="fitness" size={24} color="#1a41aa" />
           </Animated.View>
         </TouchableOpacity>
         <TouchableOpacity
@@ -189,28 +189,83 @@ export default function NavigationBar() {
   };
 
   const renderCoachNavigation = () => {
+    const isMyTeamActive = pathname === "/player/my-team";
+    const isTrainingsActive = pathname === "/coach/trainings";
+
     return (
       <>
         <TouchableOpacity
-          style={styles.leftButton}
-          onPress={() => router.push("/coach/training")}
+          style={[styles.leftButton, isTrainingsActive && styles.activeButton]}
+          onPress={() => handleNavigation("/coach/trainings")}
         >
-          <Ionicons name="basketball" size={24} color="#1a41aa" />
+          <Animated.View
+            style={[
+              styles.iconContainer,
+              isTrainingsActive && styles.activeIconContainer,
+              {
+                transform: [
+                  {
+                    scale: activeAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0.9, 1],
+                    }),
+                  },
+                ],
+              },
+            ]}
+          >
+            <Ionicons
+              name="fitness"
+              size={24}
+              color={isTrainingsActive ? "#fff" : "#1a41aa"}
+            />
+          </Animated.View>
         </TouchableOpacity>
         <TouchableOpacity
-          style={styles.centerButton}
-          onPress={() => router.push("/coach/my-team")}
+          style={[styles.centerButton, isMyTeamActive && styles.activeButton]}
+          onPress={() => handleNavigation("/player/my-team")}
         >
-          <Ionicons name="people" size={24} color="#1a41aa" />
+          <Animated.View
+            style={[
+              styles.iconContainer,
+              isMyTeamActive && styles.activeIconContainer,
+              {
+                transform: [
+                  {
+                    scale: activeAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0.9, 1],
+                    }),
+                  },
+                ],
+              },
+            ]}
+          >
+            <Ionicons
+              name="people"
+              size={24}
+              color={isMyTeamActive ? "#fff" : "#1a41aa"}
+            />
+          </Animated.View>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.rightButton, isProfileActive && styles.activeButton]}
-          onPress={() => router.push("/coach/profile")}
+          onPress={() => handleNavigation("/coach/profile")}
         >
-          <View
+          <Animated.View
             style={[
               styles.iconContainer,
               isProfileActive && styles.activeIconContainer,
+              {
+                transform: [
+                  {
+                    scale: activeAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0.9, 1],
+                    }),
+                  },
+                ],
+              },
             ]}
           >
             <Ionicons
@@ -218,7 +273,7 @@ export default function NavigationBar() {
               size={24}
               color={isProfileActive ? "#fff" : "#1a41aa"}
             />
-          </View>
+          </Animated.View>
         </TouchableOpacity>
       </>
     );
