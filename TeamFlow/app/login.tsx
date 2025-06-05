@@ -68,6 +68,32 @@ export default function Login() {
           await AsyncStorage.removeItem("clube_id");
         }
 
+        // Buscar e salvar o perfil completo do usuário
+        try {
+          const profileResponse = await fetch(
+            `${API_URL}/users/${data.user_id}`,
+            {
+              method: "GET",
+              headers: {
+                accept: "application/json",
+              },
+            }
+          );
+
+          if (profileResponse.ok) {
+            const profileData = await profileResponse.json();
+            await AsyncStorage.setItem(
+              "user_profile",
+              JSON.stringify(profileData)
+            );
+            console.log("Debug - Profile saved:", profileData); // Debug log
+          } else {
+            console.log("Debug - Failed to fetch profile"); // Debug log
+          }
+        } catch (profileError) {
+          console.error("Debug - Profile fetch error:", profileError); // Debug log
+        }
+
         // Verificar se os dados foram salvos
         const savedUserId = await AsyncStorage.getItem("user_id");
         const savedTipoUserId = await AsyncStorage.getItem("tipo_user_id");
