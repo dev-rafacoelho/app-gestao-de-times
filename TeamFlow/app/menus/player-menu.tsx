@@ -23,6 +23,14 @@ export default function PlayerMenu() {
     },
     {
       id: 2,
+      title: "Treinos",
+      subtitle: "Ver e responder aos treinos",
+      icon: "fitness",
+      route: "/player/trainings",
+      color: "#4CAF50",
+    },
+    {
+      id: 3,
       title: "Solicitar Transferência",
       subtitle: "Procurar outro time",
       icon: "swap-horizontal",

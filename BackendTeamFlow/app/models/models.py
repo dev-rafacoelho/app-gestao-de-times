@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Date, Boolean, ForeignKey
+from sqlalchemy import Column, Integer, String, Date, Boolean, ForeignKey, DateTime, Text
 from sqlalchemy.orm import relationship
 
 from app.database.database import Base
@@ -57,4 +57,36 @@ class TeamAccessRequest(Base):
     
     # Relationships
     jogador = relationship("User", foreign_keys=[jogador_id], backref="solicitacoes_acesso")
-    clube = relationship("Clube", foreign_keys=[clube_id], backref="solicitacoes_acesso") 
+    clube = relationship("Clube", foreign_keys=[clube_id], backref="solicitacoes_acesso")
+
+class Treino(Base):
+    __tablename__ = "treinos"
+
+    id = Column(Integer, primary_key=True, index=True)
+    titulo = Column(String, nullable=False)
+    descricao = Column(Text, nullable=True)
+    data_hora = Column(DateTime, nullable=False)
+    local = Column(String, nullable=False)
+    clube_id = Column(Integer, ForeignKey("clubes.id"), nullable=False)
+    criado_por = Column(Integer, ForeignKey("usuarios.id"), nullable=False)  # Técnico que criou
+    data_criacao = Column(DateTime, nullable=False)
+    ativo = Column(Boolean, default=True, nullable=False)
+    
+    # Relationships
+    clube = relationship("Clube", foreign_keys=[clube_id])
+    tecnico = relationship("User", foreign_keys=[criado_por])
+    participacoes = relationship("ParticipacaoTreino", back_populates="treino")
+
+class ParticipacaoTreino(Base):
+    __tablename__ = "participacoes_treino"
+
+    id = Column(Integer, primary_key=True, index=True)
+    treino_id = Column(Integer, ForeignKey("treinos.id"), nullable=False)
+    jogador_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
+    status = Column(String, nullable=False, default="pendente")  # pendente, aceito, rejeitado
+    data_resposta = Column(DateTime, nullable=True)
+    observacao = Column(String, nullable=True)
+    
+    # Relationships
+    treino = relationship("Treino", back_populates="participacoes")
+    jogador = relationship("User", foreign_keys=[jogador_id]) 
