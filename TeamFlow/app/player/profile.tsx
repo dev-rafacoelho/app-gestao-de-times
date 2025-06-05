@@ -13,6 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import NavigationBar from "../../components/NavigationBar";
+import { API_URL } from "../../constants/Config";
 
 interface UserProfile {
   id: number;
@@ -39,9 +40,35 @@ export default function PlayerProfile() {
 
   const loadProfile = async () => {
     try {
+      // Primeiro tenta carregar do AsyncStorage
       const storedProfile = await AsyncStorage.getItem("user_profile");
       if (storedProfile) {
         setProfile(JSON.parse(storedProfile));
+        setLoading(false);
+        return;
+      }
+
+      // Se não encontrou no AsyncStorage, busca do servidor
+      const userId = await AsyncStorage.getItem("user_id");
+      if (userId) {
+        const response = await fetch(`${API_URL}/users/${userId}`, {
+          method: "GET",
+          headers: {
+            accept: "application/json",
+          },
+        });
+
+        if (response.ok) {
+          const profileData = await response.json();
+          setProfile(profileData);
+          // Salva no AsyncStorage para próximas vezes
+          await AsyncStorage.setItem(
+            "user_profile",
+            JSON.stringify(profileData)
+          );
+        } else {
+          console.error("Erro ao buscar perfil do servidor");
+        }
       }
     } catch (error) {
       console.error("Erro ao carregar perfil:", error);
