@@ -52,12 +52,18 @@ export default function Login() {
       });
 
       const data = await response.json();
-      console.log("Response data:", data); // Debug log
+      console.log("Debug - Login response:", data); // Debug log
 
       if (response.ok && data.user_id && data.tipo_user_id) {
         // Armazena os dados do usuário
         await AsyncStorage.setItem("user_id", String(data.user_id));
         await AsyncStorage.setItem("tipo_user_id", String(data.tipo_user_id));
+
+        // Verificar se os dados foram salvos
+        const savedUserId = await AsyncStorage.getItem("user_id");
+        const savedTipoUserId = await AsyncStorage.getItem("tipo_user_id");
+        console.log("Debug - Saved user_id:", savedUserId); // Debug log
+        console.log("Debug - Saved tipo_user_id:", savedTipoUserId); // Debug log
 
         // Redireciona baseado no tipo de usuário
         switch (data.tipo_user_id) {
@@ -72,11 +78,11 @@ export default function Login() {
         }
       } else {
         const errorMessage = data.message || "Credenciais inválidas";
-        console.log("Login error:", errorMessage); // Debug log
+        console.log("Debug - Login error:", errorMessage); // Debug log
         Alert.alert("Erro", errorMessage);
       }
     } catch (error) {
-      console.error("Login error:", error); // Debug log
+      console.error("Debug - Login error:", error); // Debug log
       Alert.alert(
         "Erro",
         "Erro ao conectar com o servidor. Por favor, tente novamente."

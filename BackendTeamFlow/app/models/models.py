@@ -42,4 +42,19 @@ class Clube(Base):
     usuarios = relationship("User", foreign_keys=[User.clube_id], back_populates="clube")
 
     # Add back reference for tecnico relationship
-    User.clube_tecnico = relationship("Clube", foreign_keys=[tecnico_id], back_populates="tecnico", overlaps="clube") 
+    User.clube_tecnico = relationship("Clube", foreign_keys=[tecnico_id], back_populates="tecnico", overlaps="clube")
+
+class TeamAccessRequest(Base):
+    __tablename__ = "solicitacoes_acesso_time"
+
+    id = Column(Integer, primary_key=True, index=True)
+    jogador_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
+    clube_id = Column(Integer, ForeignKey("clubes.id"), nullable=False)
+    status = Column(String, nullable=False, default="pendente")  # pendente, aprovado, rejeitado
+    data_solicitacao = Column(Date, nullable=False)
+    data_resposta = Column(Date, nullable=True)
+    observacao = Column(String, nullable=True)
+    
+    # Relationships
+    jogador = relationship("User", foreign_keys=[jogador_id], backref="solicitacoes_acesso")
+    clube = relationship("Clube", foreign_keys=[clube_id], backref="solicitacoes_acesso") 

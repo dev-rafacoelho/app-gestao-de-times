@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { API_URL } from "../../constants/Environment";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 interface Team {
   nome: string;
@@ -30,11 +31,23 @@ interface Team {
   usuarios: any[];
 }
 
+interface TeamAccessRequest {
+  id: number;
+  jogador_id: number;
+  clube_id: number;
+  status: string;
+  data_solicitacao: string;
+  data_resposta: string | null;
+  observacao: string | null;
+}
+
 export default function FindTeams() {
   const [searchQuery, setSearchQuery] = useState("");
   const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(false);
   const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [requestingJoin, setRequestingJoin] = useState<number | null>(null);
+  const [myRequests, setMyRequests] = useState<TeamAccessRequest[]>([]);
 
   // Debounce search query
   useEffect(() => {
@@ -44,6 +57,44 @@ export default function FindTeams() {
 
     return () => clearTimeout(timer);
   }, [searchQuery]);
+
+  // Fetch user's requests when component mounts
+  useEffect(() => {
+    const fetchMyRequests = async () => {
+      try {
+        const userId = await AsyncStorage.getItem("user_id");
+        console.log("Debug - User ID for requests:", userId);
+
+        if (!userId) {
+          Alert.alert("Erro", "Usuário não identificado");
+          return;
+        }
+
+        const response = await fetch(
+          `${API_URL}/solicitacoes-acesso/minhas-solicitacoes?user_id=${userId}`,
+          {
+            method: "GET",
+            headers: {
+              accept: "application/json",
+            },
+          }
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log("Debug - My requests:", data);
+          setMyRequests(data);
+        } else {
+          const errorData = await response.json();
+          console.log("Debug - Error fetching requests:", errorData);
+        }
+      } catch (error) {
+        console.error("Debug - Error in fetchMyRequests:", error);
+      }
+    };
+
+    fetchMyRequests();
+  }, []);
 
   // Fetch teams when component mounts and when debounced query changes
   useEffect(() => {
@@ -81,52 +132,117 @@ export default function FindTeams() {
 
   const handleRequestJoin = async (teamId: number) => {
     try {
-      // TODO: Implement join request functionality
-      Alert.alert(
-        "Solicitação Enviada",
-        "Sua solicitação para entrar no time foi enviada com sucesso!"
+      setRequestingJoin(teamId);
+      const userId = await AsyncStorage.getItem("user_id");
+
+      console.log("Debug - User ID from storage:", userId);
+
+      if (!userId) {
+        Alert.alert("Erro", "Usuário não identificado");
+        return;
+      }
+
+      const response = await fetch(
+        `${API_URL}/solicitacoes-acesso/?user_id=${userId}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            accept: "application/json",
+          },
+          body: JSON.stringify({
+            clube_id: teamId,
+            observacao: "Gostaria de participar do time",
+          }),
+        }
       );
+
+      const data = await response.json();
+      console.log("Debug - Response data:", data);
+
+      if (response.ok) {
+        setMyRequests((prev) => [...prev, data]);
+        Alert.alert(
+          "Solicitação Enviada",
+          "Sua solicitação para entrar no time foi enviada com sucesso!"
+        );
+      } else {
+        const errorMessage =
+          data.detail || "Não foi possível enviar a solicitação";
+        console.log("Debug - Error message:", errorMessage);
+        Alert.alert("Erro", errorMessage);
+      }
     } catch (error) {
-      Alert.alert("Erro", "Não foi possível enviar a solicitação");
+      console.error("Debug - Full error:", error);
+      Alert.alert("Erro", "Ocorreu um erro ao enviar a solicitação");
+    } finally {
+      setRequestingJoin(null);
     }
   };
 
-  const renderTeamItem = ({ item }: { item: Team }) => (
-    <View style={styles.teamCard}>
-      <View style={styles.teamHeader}>
-        <Text style={styles.teamName}>{item.nome}</Text>
-        {item.procurando_jogadores && (
-          <View style={styles.searchingBadge}>
-            <Text style={styles.searchingText}>Procurando Jogadores</Text>
+  const getRequestStatus = (teamId: number) => {
+    const request = myRequests.find((req) => req.clube_id === teamId);
+    if (!request) return null;
+    return request.status;
+  };
+
+  const renderTeamItem = ({ item }: { item: Team }) => {
+    const requestStatus = getRequestStatus(item.id);
+    const isRequesting = requestingJoin === item.id;
+
+    return (
+      <View style={styles.teamCard}>
+        <View style={styles.teamHeader}>
+          <Text style={styles.teamName}>{item.nome}</Text>
+          {item.procurando_jogadores && (
+            <View style={styles.searchingBadge}>
+              <Text style={styles.searchingText}>Procurando Jogadores</Text>
+            </View>
+          )}
+        </View>
+
+        <View style={styles.teamInfo}>
+          <View style={styles.infoRow}>
+            <Ionicons name="person" size={16} color="#666" />
+            <Text style={styles.infoText}>Técnico: {item.tecnico.nome}</Text>
           </View>
+          <View style={styles.infoRow}>
+            <Ionicons name="mail" size={16} color="#666" />
+            <Text style={styles.infoText}>{item.tecnico.email}</Text>
+          </View>
+          <View style={styles.infoRow}>
+            <Ionicons name="call" size={16} color="#666" />
+            <Text style={styles.infoText}>{item.tecnico.telefone}</Text>
+          </View>
+        </View>
+
+        {item.procurando_jogadores && (
+          <TouchableOpacity
+            style={[
+              styles.joinButton,
+              requestStatus === "pendente" && styles.pendingButton,
+              requestStatus === "aprovado" && styles.approvedButton,
+              requestStatus === "rejeitado" && styles.rejectedButton,
+            ]}
+            onPress={() => handleRequestJoin(item.id)}
+            disabled={!!requestStatus || isRequesting}
+          >
+            {isRequesting ? (
+              <ActivityIndicator color="#fff" size="small" />
+            ) : requestStatus === "pendente" ? (
+              <Text style={styles.joinButtonText}>Solicitação Pendente</Text>
+            ) : requestStatus === "aprovado" ? (
+              <Text style={styles.joinButtonText}>Solicitação Aprovada</Text>
+            ) : requestStatus === "rejeitado" ? (
+              <Text style={styles.joinButtonText}>Solicitação Rejeitada</Text>
+            ) : (
+              <Text style={styles.joinButtonText}>Solicitar Entrada</Text>
+            )}
+          </TouchableOpacity>
         )}
       </View>
-
-      <View style={styles.teamInfo}>
-        <View style={styles.infoRow}>
-          <Ionicons name="person" size={16} color="#666" />
-          <Text style={styles.infoText}>Técnico: {item.tecnico.nome}</Text>
-        </View>
-        <View style={styles.infoRow}>
-          <Ionicons name="mail" size={16} color="#666" />
-          <Text style={styles.infoText}>{item.tecnico.email}</Text>
-        </View>
-        <View style={styles.infoRow}>
-          <Ionicons name="call" size={16} color="#666" />
-          <Text style={styles.infoText}>{item.tecnico.telefone}</Text>
-        </View>
-      </View>
-
-      {item.procurando_jogadores && (
-        <TouchableOpacity
-          style={styles.joinButton}
-          onPress={() => handleRequestJoin(item.id)}
-        >
-          <Text style={styles.joinButtonText}>Solicitar Entrada</Text>
-        </TouchableOpacity>
-      )}
-    </View>
-  );
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -306,5 +422,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#666",
     textAlign: "center",
+  },
+  pendingButton: {
+    backgroundColor: "#FFA500",
+  },
+  approvedButton: {
+    backgroundColor: "#4CAF50",
+  },
+  rejectedButton: {
+    backgroundColor: "#F44336",
   },
 });

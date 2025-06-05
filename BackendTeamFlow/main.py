@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 
 from app.database.database import engine, get_db
 from app.database.database import Base
-from app.routers import auth, users, tipo_users, clubes
+from app.routers import auth, users, tipo_users, clubes, solicitacoes_acesso
 
 # Load environment variables
 load_dotenv()
@@ -21,6 +21,7 @@ app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(tipo_users.router)
 app.include_router(clubes.router)
+app.include_router(solicitacoes_acesso.router)
 
 @app.get("/")
 def read_root():
