@@ -1,56 +1,45 @@
-import React from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  SafeAreaView,
-} from "react-native";
+import React, { useEffect } from "react";
+import { View, Text, StyleSheet, SafeAreaView, Animated } from "react-native";
 import { useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function PlayerMenu() {
   const router = useRouter();
+  const fadeAnim = React.useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    const checkTeamStatus = async () => {
+      const clubeId = await AsyncStorage.getItem("clube_id");
+      if (!clubeId) {
+        // Fade out animation
+        Animated.timing(fadeAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }).start(() => {
+          // Navigate with animation
+          router.push({
+            pathname: "/player/find-teams",
+            params: { animation: "fade" },
+          });
+        });
+      }
+    };
+
+    checkTeamStatus();
+  }, []);
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Menu do Jogador</Text>
-      </View>
+      <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Menu do Jogador</Text>
+        </View>
 
-      <View style={styles.menuContainer}>
-        <TouchableOpacity
-          style={styles.menuItem}
-          onPress={() => router.push("/player/find-teams")}
-        >
-          <Ionicons name="search" size={24} color="#1a41aa" />
-          <Text style={styles.menuItemText}>Procurar Times</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.menuItem}
-          onPress={() => router.push("/player/my-team")}
-        >
-          <Ionicons name="people" size={24} color="#1a41aa" />
-          <Text style={styles.menuItemText}>Meu Time</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.menuItem}
-          onPress={() => router.push("/player/training")}
-        >
-          <Ionicons name="basketball" size={24} color="#1a41aa" />
-          <Text style={styles.menuItemText}>Treinos</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.menuItem}
-          onPress={() => router.push("/player/profile")}
-        >
-          <Ionicons name="person" size={24} color="#1a41aa" />
-          <Text style={styles.menuItemText}>Meu Perfil</Text>
-        </TouchableOpacity>
-      </View>
+        <View style={styles.welcomeContainer}>
+          <Text style={styles.welcomeText}>Bem-vindo ao TeamFlow!</Text>
+        </View>
+      </Animated.View>
     </SafeAreaView>
   );
 }
@@ -58,41 +47,29 @@ export default function PlayerMenu() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: "#fff",
+  },
+  content: {
+    flex: 1,
   },
   header: {
-    backgroundColor: "#1a41aa",
     padding: 20,
-    alignItems: "center",
+    backgroundColor: "#1a41aa",
   },
   headerTitle: {
-    color: "#fff",
     fontSize: 24,
     fontWeight: "bold",
+    color: "#fff",
   },
-  menuContainer: {
+  welcomeContainer: {
+    flex: 1,
     padding: 20,
-  },
-  menuItem: {
-    flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#fff",
-    padding: 20,
-    borderRadius: 10,
-    marginBottom: 15,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    justifyContent: "center",
   },
-  menuItemText: {
-    marginLeft: 15,
-    fontSize: 16,
+  welcomeText: {
+    fontSize: 18,
     color: "#333",
-    fontWeight: "500",
+    textAlign: "center",
   },
 });
