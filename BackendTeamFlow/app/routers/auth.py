@@ -59,10 +59,17 @@ def login_user(user_credentials: UserLogin, db: Session = Depends(get_db)):
             headers={"WWW-Authenticate": "Bearer"},
         )
     
+    # Para técnicos, buscar o clube_id do clube que ele gerencia
+    clube_id = user.clube_id
+    if user.tipo_user_id == 2:  # É técnico
+        clube = db.query(Clube).filter(Clube.tecnico_id == user.id).first()
+        if clube:
+            clube_id = clube.id
+    
     # Return user information including tipo_user_id and clube_id
     return {
         "message": "Login successful",
         "user_id": user.id,
         "tipo_user_id": user.tipo_user_id,
-        "clube_id": user.clube_id
+        "clube_id": clube_id
     } 

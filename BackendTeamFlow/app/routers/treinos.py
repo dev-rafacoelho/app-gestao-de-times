@@ -122,6 +122,8 @@ def listar_treinos_clube(
     db: Session = Depends(get_db)
 ):
     """Jogador lista treinos do seu clube"""
+    print(f"Debug - Buscando treinos para clube_id: {clube_id}, jogador_id: {jogador_id}")
+    
     # Verificar se o jogador faz parte do clube
     jogador = db.query(User).filter(
         User.id == jogador_id,
@@ -129,14 +131,21 @@ def listar_treinos_clube(
         User.tipo_user_id == 1
     ).first()
     
+    print(f"Debug - Jogador encontrado: {jogador is not None}")
+    if jogador:
+        print(f"Debug - Dados do jogador: id={jogador.id}, clube_id={jogador.clube_id}, tipo={jogador.tipo_user_id}")
+    
     if not jogador:
+        print(f"Debug - Jogador não encontrado ou não é do clube")
         raise HTTPException(status_code=403, detail="Você não faz parte deste clube ou não é jogador")
     
+    # Buscar treinos do clube (incluindo passados para visualização completa)
     treinos = db.query(Treino).filter(
         Treino.clube_id == clube_id,
-        Treino.ativo == True,
-        Treino.data_hora >= datetime.now()
-    ).order_by(Treino.data_hora.asc()).all()
+        Treino.ativo == True
+    ).order_by(Treino.data_hora.desc()).all()
+    
+    print(f"Debug - Treinos encontrados: {len(treinos)}")
     
     return treinos
 
@@ -146,9 +155,20 @@ def listar_minhas_participacoes(
     db: Session = Depends(get_db)
 ):
     """Jogador lista suas participações em treinos"""
+    # Verificar se o jogador existe
+    jogador = db.query(User).filter(User.id == jogador_id).first()
+    if not jogador:
+        raise HTTPException(status_code=404, detail="Jogador não encontrado")
+    
+    # Buscar participações incluindo dados do treino e do jogador
     participacoes = db.query(ParticipacaoTreino).filter(
         ParticipacaoTreino.jogador_id == jogador_id
     ).join(Treino).filter(Treino.ativo == True).all()
+    
+    # Adicionar informações do jogador a cada participação
+    for participacao in participacoes:
+        if not hasattr(participacao, 'jogador') or not participacao.jogador:
+            participacao.jogador = jogador
     
     return participacoes
 

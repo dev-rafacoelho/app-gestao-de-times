@@ -120,4 +120,33 @@ def delete_clube(clube_id: int, db: Session = Depends(get_db)):
     
     db.delete(db_clube)
     db.commit()
-    return None 
+    return None
+
+@router.get("/meu-clube/{tecnico_id}", response_model=ClubeSchema)
+def get_clube_do_tecnico(tecnico_id: int, db: Session = Depends(get_db)):
+    """
+    Retorna o clube que um técnico específico gerencia.
+    Para técnicos, o clube_id não está no User, mas sim o tecnico_id está no Clube.
+    """
+    # Verificar se o usuário é técnico
+    tecnico = db.query(User).filter(
+        User.id == tecnico_id,
+        User.tipo_user_id == 2
+    ).first()
+    
+    if not tecnico:
+        raise HTTPException(
+            status_code=404, 
+            detail="Técnico não encontrado ou usuário não é um técnico"
+        )
+    
+    # Buscar o clube onde este técnico é o responsável
+    clube = db.query(Clube).filter(Clube.tecnico_id == tecnico_id).first()
+    
+    if not clube:
+        raise HTTPException(
+            status_code=404, 
+            detail="Este técnico não possui um clube associado"
+        )
+    
+    return clube 

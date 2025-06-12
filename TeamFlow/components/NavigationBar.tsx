@@ -189,7 +189,7 @@ export default function NavigationBar() {
   };
 
   const renderCoachNavigation = () => {
-    const isMyTeamActive = pathname === "/player/my-team";
+    const isMyTeamActive = pathname === "/coach/my-team";
     const isTrainingsActive = pathname === "/coach/trainings";
 
     return (
@@ -223,7 +223,7 @@ export default function NavigationBar() {
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.centerButton, isMyTeamActive && styles.activeButton]}
-          onPress={() => handleNavigation("/player/my-team")}
+          onPress={() => handleNavigation("/coach/my-team")}
         >
           <Animated.View
             style={[

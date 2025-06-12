@@ -47,8 +47,13 @@ export default function PlayerTrainings() {
       const userId = await AsyncStorage.getItem("user_id");
       const clubeId = await AsyncStorage.getItem("clube_id");
 
+      console.log("Debug - userId:", userId, "clubeId:", clubeId); // Debug
+
       if (!userId || !clubeId) {
-        Alert.alert("Erro", "Dados do usuário não encontrados");
+        Alert.alert(
+          "Erro",
+          "Dados do usuário não encontrados. Faça login novamente."
+        );
         return;
       }
 
@@ -63,9 +68,19 @@ export default function PlayerTrainings() {
         }
       );
 
+      console.log("Debug - treinosResponse status:", treinosResponse.status); // Debug
+
       if (treinosResponse.ok) {
         const treinosData = await treinosResponse.json();
+        console.log("Debug - treinos encontrados:", treinosData.length); // Debug
         setTreinos(treinosData);
+      } else {
+        const errorData = await treinosResponse.json();
+        console.log("Debug - erro treinos:", errorData); // Debug
+        Alert.alert(
+          "Erro",
+          errorData.detail || "Não foi possível carregar os treinos"
+        );
       }
 
       // Buscar participações do jogador
@@ -79,9 +94,22 @@ export default function PlayerTrainings() {
         }
       );
 
+      console.log(
+        "Debug - participacoesResponse status:",
+        participacoesResponse.status
+      ); // Debug
+
       if (participacoesResponse.ok) {
         const participacoesData = await participacoesResponse.json();
+        console.log(
+          "Debug - participações encontradas:",
+          participacoesData.length
+        ); // Debug
         setParticipacoes(participacoesData);
+      } else {
+        const errorData = await participacoesResponse.json();
+        console.log("Debug - erro participações:", errorData); // Debug
+        // Não mostrar erro aqui pois pode ser normal não ter participações
       }
     } catch (error) {
       console.error("Erro ao buscar treinos:", error);
@@ -93,7 +121,41 @@ export default function PlayerTrainings() {
   };
 
   useEffect(() => {
-    fetchTreinos();
+    // Verificar se o usuário tem todos os dados necessários
+    const checkUserData = async () => {
+      const userId = await AsyncStorage.getItem("user_id");
+      const clubeId = await AsyncStorage.getItem("clube_id");
+      const tipoUserId = await AsyncStorage.getItem("tipo_user_id");
+
+      console.log("Debug - Verificando dados do usuário:", {
+        userId,
+        clubeId,
+        tipoUserId,
+      });
+
+      // Se não tem clube_id, jogador não faz parte de nenhum time
+      if (!clubeId) {
+        Alert.alert(
+          "Atenção",
+          "Você ainda não faz parte de nenhum time. Procure um time para participar dos treinos.",
+          [
+            {
+              text: "OK",
+              onPress: () => {
+                // Redirecionar para tela de procurar times se necessário
+              },
+            },
+          ]
+        );
+        setLoading(false);
+        return;
+      }
+
+      // Se tem clube_id, busca os treinos
+      fetchTreinos();
+    };
+
+    checkUserData();
   }, []);
 
   const onRefresh = () => {
@@ -250,6 +312,26 @@ export default function PlayerTrainings() {
     );
   };
 
+  const debugUserData = async () => {
+    const userId = await AsyncStorage.getItem("user_id");
+    const clubeId = await AsyncStorage.getItem("clube_id");
+    const tipoUserId = await AsyncStorage.getItem("tipo_user_id");
+    const userProfile = await AsyncStorage.getItem("user_profile");
+
+    const debugInfo = {
+      userId,
+      clubeId,
+      tipoUserId,
+      userProfile: userProfile ? JSON.parse(userProfile) : null,
+      treinosCount: treinos.length,
+      participacoesCount: participacoes.length,
+    };
+
+    Alert.alert("Debug Info", JSON.stringify(debugInfo, null, 2), [
+      { text: "OK" },
+    ]);
+  };
+
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
@@ -268,6 +350,9 @@ export default function PlayerTrainings() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Treinos</Text>
+        <TouchableOpacity style={styles.debugButton} onPress={debugUserData}>
+          <Ionicons name="bug" size={20} color="#fff" />
+        </TouchableOpacity>
       </View>
 
       <ScrollView
@@ -297,11 +382,14 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: "#1a41aa",
     padding: 20,
+    flexDirection: "row",
+    alignItems: "center",
   },
   headerTitle: {
     fontSize: 24,
     fontWeight: "bold",
     color: "#fff",
+    flex: 1,
     textAlign: "center",
   },
   loadingContainer: {
@@ -418,5 +506,11 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "bold",
     fontSize: 14,
+  },
+  debugButton: {
+    padding: 5,
+    borderRadius: 15,
+    backgroundColor: "#1a41aa",
+    marginLeft: 10,
   },
 });

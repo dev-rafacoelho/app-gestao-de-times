@@ -35,7 +35,7 @@ export default function CoachMenu() {
       title: "Meu Time",
       subtitle: "Ver informações do time",
       icon: "people",
-      route: "/player/my-team",
+      route: "/coach/my-team",
       color: "#ff9800",
     },
   ];
