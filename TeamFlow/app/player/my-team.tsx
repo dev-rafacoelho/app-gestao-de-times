@@ -121,8 +121,8 @@ export default function MyTeam() {
                   {
                     text: "OK",
                     onPress: () => {
-                      // Redirecionar para a tela de procurar times
-                      router.replace("/player/find-teams");
+                      // Redirecionar para o menu principal do jogador
+                      router.replace("/menus/player-menu");
                     },
                   },
                 ]);

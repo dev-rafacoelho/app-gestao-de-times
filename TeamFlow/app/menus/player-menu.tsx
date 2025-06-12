@@ -116,8 +116,9 @@ export default function PlayerMenu() {
                   {
                     text: "OK",
                     onPress: () => {
-                      // Redirecionar para a tela de procurar times
-                      router.replace("/player/find-teams");
+                      // Atualizar o estado para refletir que não tem mais time
+                      setHasTeam(false);
+                      // Já estamos no menu, apenas atualizamos a interface
                     },
                   },
                 ]);

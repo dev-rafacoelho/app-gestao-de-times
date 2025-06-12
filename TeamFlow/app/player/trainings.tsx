@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useRouter } from "expo-router";
 import { API_URL } from "../../constants/Config";
 
 interface Treino {
@@ -36,6 +37,7 @@ interface ParticipacaoTreino {
 }
 
 export default function PlayerTrainings() {
+  const router = useRouter();
   const [treinos, setTreinos] = useState<Treino[]>([]);
   const [participacoes, setParticipacoes] = useState<ParticipacaoTreino[]>([]);
   const [loading, setLoading] = useState(true);
@@ -136,14 +138,18 @@ export default function PlayerTrainings() {
       // Se não tem clube_id, jogador não faz parte de nenhum time
       if (!clubeId) {
         Alert.alert(
-          "Atenção",
-          "Você ainda não faz parte de nenhum time. Procure um time para participar dos treinos.",
+          "Você não faz parte de nenhum time",
+          "Para participar dos treinos, você precisa primeiro entrar em um time.",
           [
             {
-              text: "OK",
+              text: "Ir ao Menu",
               onPress: () => {
-                // Redirecionar para tela de procurar times se necessário
+                router.replace("/menus/player-menu");
               },
+            },
+            {
+              text: "OK",
+              style: "cancel",
             },
           ]
         );
