@@ -1,18 +1,32 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
   StyleSheet,
   SafeAreaView,
   TouchableOpacity,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { API_URL } from "../../constants/Config";
 
 export default function PlayerMenu() {
   const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [hasTeam, setHasTeam] = useState<boolean | null>(null);
 
-  const menuItems = [
+  // Verificar se o jogador tem um time
+  React.useEffect(() => {
+    const checkTeam = async () => {
+      const clubeId = await AsyncStorage.getItem("clube_id");
+      setHasTeam(!!clubeId);
+    };
+    checkTeam();
+  }, []);
+
+  const menuItemsWithTeam = [
     {
       id: 1,
       title: "Meu Time",
@@ -31,16 +45,107 @@ export default function PlayerMenu() {
     },
     {
       id: 3,
-      title: "Solicitar Transferência",
+      title: "Procurar Times",
       subtitle: "Procurar outro time",
-      icon: "swap-horizontal",
+      icon: "search",
       route: "/player/find-teams",
       color: "#ff9800",
     },
+    {
+      id: 4,
+      title: "Sair do Time",
+      subtitle: "Deixar o time atual",
+      icon: "exit",
+      route: "/player/leave-team",
+      color: "#f44336",
+      action: "leave-team",
+    },
   ];
 
-  const handleMenuPress = (route: string) => {
-    router.push(route);
+  const menuItemsWithoutTeam = [
+    {
+      id: 1,
+      title: "Procurar Times",
+      subtitle: "Encontrar e solicitar entrada em um time",
+      icon: "search",
+      route: "/player/find-teams",
+      color: "#1a41aa",
+    },
+  ];
+
+  const menuItems = hasTeam ? menuItemsWithTeam : menuItemsWithoutTeam;
+
+  const handleLeaveTeam = async () => {
+    Alert.alert(
+      "Sair do Time",
+      "Tem certeza que deseja sair do seu time atual?",
+      [
+        {
+          text: "Cancelar",
+          style: "cancel",
+        },
+        {
+          text: "Sair",
+          style: "destructive",
+          onPress: async () => {
+            setLoading(true);
+            try {
+              const userId = await AsyncStorage.getItem("user_id");
+
+              if (!userId) {
+                Alert.alert("Erro", "Usuário não identificado");
+                return;
+              }
+
+              const response = await fetch(
+                `${API_URL}/users/${userId}/sair-clube`,
+                {
+                  method: "PATCH",
+                  headers: {
+                    "Content-Type": "application/json",
+                    accept: "application/json",
+                  },
+                }
+              );
+
+              if (response.ok) {
+                // Remover clube_id do AsyncStorage
+                await AsyncStorage.removeItem("clube_id");
+
+                Alert.alert("Sucesso", "Você saiu do time com sucesso!", [
+                  {
+                    text: "OK",
+                    onPress: () => {
+                      // Redirecionar para a tela de procurar times
+                      router.replace("/player/find-teams");
+                    },
+                  },
+                ]);
+              } else {
+                const errorData = await response.json();
+                Alert.alert(
+                  "Erro",
+                  errorData.detail || "Não foi possível sair do time"
+                );
+              }
+            } catch (error) {
+              console.error("Erro ao sair do time:", error);
+              Alert.alert("Erro", "Ocorreu um erro ao sair do time");
+            } finally {
+              setLoading(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleMenuPress = (route: string, action?: string) => {
+    if (action === "leave-team") {
+      handleLeaveTeam();
+    } else {
+      router.push(route);
+    }
   };
 
   return (
@@ -52,30 +157,62 @@ export default function PlayerMenu() {
 
         <View style={styles.welcomeContainer}>
           <Text style={styles.welcomeText}>Bem-vindo ao TeamFlow!</Text>
-          <Text style={styles.subText}>Você já faz parte de um time!</Text>
+          <Text style={styles.subText}>
+            {hasTeam === null
+              ? "Carregando..."
+              : hasTeam
+              ? "Gerencie seu time e treinos"
+              : "Encontre um time para participar"}
+          </Text>
         </View>
 
         <View style={styles.menuContainer}>
-          {menuItems.map((item) => (
-            <TouchableOpacity
-              key={item.id}
-              style={[styles.menuItem, { borderLeftColor: item.color }]}
-              onPress={() => handleMenuPress(item.route)}
-            >
-              <View style={styles.menuIconContainer}>
+          {hasTeam !== null &&
+            menuItems.map((item) => (
+              <TouchableOpacity
+                key={item.id}
+                style={[
+                  styles.menuItem,
+                  { borderLeftColor: item.color },
+                  loading && styles.menuItemDisabled,
+                ]}
+                onPress={() =>
+                  !loading && handleMenuPress(item.route, item.action)
+                }
+                disabled={loading}
+              >
+                <View style={styles.menuIconContainer}>
+                  <Ionicons
+                    name={item.icon as any}
+                    size={28}
+                    color={loading ? "#ccc" : item.color}
+                  />
+                </View>
+                <View style={styles.menuTextContainer}>
+                  <Text
+                    style={[
+                      styles.menuTitle,
+                      loading && styles.menuTitleDisabled,
+                    ]}
+                  >
+                    {item.title}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.menuSubtitle,
+                      loading && styles.menuSubtitleDisabled,
+                    ]}
+                  >
+                    {item.subtitle}
+                  </Text>
+                </View>
                 <Ionicons
-                  name={item.icon as any}
-                  size={28}
-                  color={item.color}
+                  name="chevron-forward"
+                  size={20}
+                  color={loading ? "#ccc" : "#ccc"}
                 />
-              </View>
-              <View style={styles.menuTextContainer}>
-                <Text style={styles.menuTitle}>{item.title}</Text>
-                <Text style={styles.menuSubtitle}>{item.subtitle}</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color="#ccc" />
-            </TouchableOpacity>
-          ))}
+              </TouchableOpacity>
+            ))}
         </View>
       </View>
     </SafeAreaView>
@@ -148,5 +285,14 @@ const styles = StyleSheet.create({
   menuSubtitle: {
     fontSize: 14,
     color: "#666",
+  },
+  menuItemDisabled: {
+    backgroundColor: "#f0f0f0",
+  },
+  menuTitleDisabled: {
+    color: "#ccc",
+  },
+  menuSubtitleDisabled: {
+    color: "#ccc",
   },
 });

@@ -8,9 +8,11 @@ import {
   ActivityIndicator,
   Alert,
   RefreshControl,
+  TouchableOpacity,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useRouter } from "expo-router";
 import { API_URL } from "../../constants/Config";
 
 interface Usuario {
@@ -43,6 +45,7 @@ interface TeamInfo {
 }
 
 export default function MyTeam() {
+  const router = useRouter();
   const [teamInfo, setTeamInfo] = useState<TeamInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -76,6 +79,68 @@ export default function MyTeam() {
       setLoading(false);
       setRefreshing(false);
     }
+  };
+
+  const handleLeaveTeam = async () => {
+    Alert.alert(
+      "Sair do Time",
+      `Tem certeza que deseja sair do ${teamInfo?.nome}?`,
+      [
+        {
+          text: "Cancelar",
+          style: "cancel",
+        },
+        {
+          text: "Sair",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const userId = await AsyncStorage.getItem("user_id");
+
+              if (!userId) {
+                Alert.alert("Erro", "Usuário não identificado");
+                return;
+              }
+
+              const response = await fetch(
+                `${API_URL}/users/${userId}/sair-clube`,
+                {
+                  method: "PATCH",
+                  headers: {
+                    "Content-Type": "application/json",
+                    accept: "application/json",
+                  },
+                }
+              );
+
+              if (response.ok) {
+                // Remover clube_id do AsyncStorage
+                await AsyncStorage.removeItem("clube_id");
+
+                Alert.alert("Sucesso", "Você saiu do time com sucesso!", [
+                  {
+                    text: "OK",
+                    onPress: () => {
+                      // Redirecionar para a tela de procurar times
+                      router.replace("/player/find-teams");
+                    },
+                  },
+                ]);
+              } else {
+                const errorData = await response.json();
+                Alert.alert(
+                  "Erro",
+                  errorData.detail || "Não foi possível sair do time"
+                );
+              }
+            } catch (error) {
+              console.error("Erro ao sair do time:", error);
+              Alert.alert("Erro", "Ocorreu um erro ao sair do time");
+            }
+          },
+        },
+      ]
+    );
   };
 
   useEffect(() => {
@@ -161,6 +226,15 @@ export default function MyTeam() {
               </Text>
             </View>
           </View>
+
+          {/* Botão para sair do time */}
+          <TouchableOpacity
+            style={styles.leaveTeamButton}
+            onPress={handleLeaveTeam}
+          >
+            <Ionicons name="exit" size={16} color="#fff" />
+            <Text style={styles.leaveTeamButtonText}>Sair do Time</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Informações do Técnico */}
@@ -391,5 +465,20 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#666",
     fontStyle: "italic",
+  },
+  leaveTeamButton: {
+    backgroundColor: "#f44336",
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 15,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  leaveTeamButtonText: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#fff",
   },
 });
