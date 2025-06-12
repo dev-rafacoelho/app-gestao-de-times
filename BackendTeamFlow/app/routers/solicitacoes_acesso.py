@@ -98,6 +98,8 @@ def listar_solicitacoes_clube(
     user_id: int = Query(..., description="ID do técnico do clube"),
     db: Session = Depends(get_db)
 ):
+    logger.info(f"Listando solicitações para clube_id: {clube_id}, user_id: {user_id}")
+    
     # Verificar se o usuário é técnico do clube
     clube = db.query(Clube).filter(
         Clube.id == clube_id,
@@ -105,12 +107,43 @@ def listar_solicitacoes_clube(
     ).first()
     
     if not clube:
+        logger.error(f"Técnico {user_id} não tem permissão para ver solicitações do clube {clube_id}")
         raise HTTPException(status_code=403, detail="Acesso negado. Apenas o técnico do clube pode ver as solicitações")
     
+    # Buscar solicitações com dados do jogador e clube
     solicitacoes = db.query(TeamAccessRequest).filter(
         TeamAccessRequest.clube_id == clube_id
     ).all()
-    return solicitacoes
+    
+    # Enriquecer com dados do jogador e clube
+    solicitacoes_com_dados = []
+    for solicitacao in solicitacoes:
+        jogador = db.query(User).filter(User.id == solicitacao.jogador_id).first()
+        
+        solicitacao_dict = {
+            "id": solicitacao.id,
+            "jogador_id": solicitacao.jogador_id,
+            "clube_id": solicitacao.clube_id,
+            "status": solicitacao.status,
+            "data_solicitacao": solicitacao.data_solicitacao,
+            "data_resposta": solicitacao.data_resposta,
+            "observacao": solicitacao.observacao,
+            "jogador": {
+                "id": jogador.id,
+                "nome": jogador.nome,
+                "email": jogador.email
+            } if jogador else None,
+            "clube": {
+                "id": clube.id,
+                "nome": clube.nome,
+                "tecnico_id": clube.tecnico_id,
+                "procurando_jogadores": clube.procurando_jogadores
+            }
+        }
+        solicitacoes_com_dados.append(solicitacao_dict)
+    
+    logger.info(f"Encontradas {len(solicitacoes_com_dados)} solicitações")
+    return solicitacoes_com_dados
 
 @router.put("/{solicitacao_id}", response_model=SolicitacaoAcessoResponse)
 def responder_solicitacao(
@@ -119,13 +152,18 @@ def responder_solicitacao(
     user_id: int = Query(..., description="ID do técnico do clube"),
     db: Session = Depends(get_db)
 ):
+    logger.info(f"Respondendo solicitação {solicitacao_id} com status {resposta.status} pelo técnico {user_id}")
+    
     # Buscar a solicitação
     solicitacao = db.query(TeamAccessRequest).filter(
         TeamAccessRequest.id == solicitacao_id
     ).first()
     
     if not solicitacao:
+        logger.error(f"Solicitação {solicitacao_id} não encontrada")
         raise HTTPException(status_code=404, detail="Solicitação não encontrada")
+    
+    logger.info(f"Solicitação encontrada: jogador_id={solicitacao.jogador_id}, clube_id={solicitacao.clube_id}, status={solicitacao.status}")
     
     # Verificar se o usuário é técnico do clube
     clube = db.query(Clube).filter(
@@ -134,21 +172,37 @@ def responder_solicitacao(
     ).first()
     
     if not clube:
+        logger.error(f"Técnico {user_id} não tem permissão para responder solicitação do clube {solicitacao.clube_id}")
         raise HTTPException(status_code=403, detail="Acesso negado. Apenas o técnico do clube pode responder solicitações")
     
     if solicitacao.status != "pendente":
+        logger.warning(f"Tentativa de responder solicitação já processada: {solicitacao_id} (status atual: {solicitacao.status})")
         raise HTTPException(status_code=400, detail="Esta solicitação já foi respondida")
     
-    # Atualizar a solicitação
-    solicitacao.status = resposta.status
-    solicitacao.data_resposta = date.today()
-    solicitacao.observacao = resposta.observacao
-    
-    # Se aprovado, adicionar o jogador ao time
-    if resposta.status == "aprovado":
-        jogador = db.query(User).filter(User.id == solicitacao.jogador_id).first()
-        jogador.clube_id = solicitacao.clube_id
-    
-    db.commit()
-    db.refresh(solicitacao)
-    return solicitacao 
+    try:
+        # Atualizar a solicitação
+        solicitacao.status = resposta.status
+        solicitacao.data_resposta = date.today()
+        if resposta.observacao:
+            solicitacao.observacao = resposta.observacao
+        
+        # Se aprovado, adicionar o jogador ao time
+        if resposta.status == "aprovado":
+            jogador = db.query(User).filter(User.id == solicitacao.jogador_id).first()
+            if jogador:
+                jogador.clube_id = solicitacao.clube_id
+                logger.info(f"Jogador {jogador.id} ({jogador.nome}) adicionado ao clube {clube.nome}")
+            else:
+                logger.error(f"Jogador {solicitacao.jogador_id} não encontrado")
+                raise HTTPException(status_code=404, detail="Jogador não encontrado")
+        
+        db.commit()
+        db.refresh(solicitacao)
+        
+        logger.info(f"Solicitação {solicitacao_id} respondida com sucesso: {resposta.status}")
+        return solicitacao
+        
+    except Exception as e:
+        logger.error(f"Erro ao processar resposta da solicitação {solicitacao_id}: {str(e)}")
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Erro ao processar resposta: {str(e)}") 

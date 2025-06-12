@@ -38,6 +38,14 @@ export default function CoachMenu() {
       route: "/coach/my-team",
       color: "#ff9800",
     },
+    {
+      id: 4,
+      title: "Solicitações de Acesso",
+      subtitle: "Aceitar ou recusar jogadores",
+      icon: "person-add",
+      route: "/coach/manage-requests",
+      color: "#9c27b0",
+    },
   ];
 
   const handleMenuPress = (route: string) => {
