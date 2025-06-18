@@ -105,4 +105,77 @@ def sair_do_clube(user_id: int, db: Session = Depends(get_db)):
         "message": f"Você saiu do {clube_nome} com sucesso"
     }
     
-    return db_user 
+    return db_user
+
+@router.patch("/{jogador_id}/remover-do-clube")
+def remover_jogador_do_clube(
+    jogador_id: int, 
+    tecnico_id: int, 
+    db: Session = Depends(get_db)
+):
+    """
+    Permite que um técnico remova um jogador do seu clube.
+    Apenas o técnico do clube pode remover jogadores.
+    """
+    # Buscar o jogador
+    db_jogador = db.query(User).filter(User.id == jogador_id).first()
+    if not db_jogador:
+        raise HTTPException(status_code=404, detail="Jogador não encontrado")
+    
+    # Verificar se é um jogador
+    if db_jogador.tipo_user_id != 1:
+        raise HTTPException(
+            status_code=400, 
+            detail="Apenas jogadores podem ser removidos de clubes"
+        )
+    
+    # Verificar se o jogador faz parte de algum clube
+    if not db_jogador.clube_id:
+        raise HTTPException(
+            status_code=400,
+            detail="Este jogador não faz parte de nenhum clube"
+        )
+    
+    # Buscar o técnico
+    db_tecnico = db.query(User).filter(User.id == tecnico_id).first()
+    if not db_tecnico:
+        raise HTTPException(status_code=404, detail="Técnico não encontrado")
+    
+    # Verificar se é um técnico
+    if db_tecnico.tipo_user_id != 2:
+        raise HTTPException(
+            status_code=400,
+            detail="Apenas técnicos podem remover jogadores"
+        )
+    
+    # Buscar o clube do técnico
+    clube_tecnico = db.query(Clube).filter(Clube.tecnico_id == tecnico_id).first()
+    if not clube_tecnico:
+        raise HTTPException(
+            status_code=400,
+            detail="Técnico não possui clube associado"
+        )
+    
+    # Verificar se o jogador pertence ao clube do técnico
+    if db_jogador.clube_id != clube_tecnico.id:
+        raise HTTPException(
+            status_code=403,
+            detail="Você só pode remover jogadores do seu próprio clube"
+        )
+    
+    # Guardar informações para resposta
+    clube_nome = clube_tecnico.nome
+    jogador_nome = db_jogador.nome
+    
+    # Remover o jogador do clube
+    db_jogador.clube_id = None
+    
+    db.commit()
+    db.refresh(db_jogador)
+    
+    return {
+        "message": f"Jogador {jogador_nome} foi removido do {clube_nome} com sucesso",
+        "jogador_id": db_jogador.id,
+        "jogador_nome": db_jogador.nome,
+        "clube_nome": clube_nome
+    }

@@ -149,6 +149,60 @@ export default function CoachMyTeam() {
     }
   };
 
+  const removerJogador = async (jogador: Usuario) => {
+    Alert.alert(
+      "Remover Jogador",
+      `Tem certeza que deseja remover ${jogador.nome} do time?`,
+      [
+        {
+          text: "Cancelar",
+          style: "cancel",
+        },
+        {
+          text: "Remover",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const tecnicoId = await AsyncStorage.getItem("user_id");
+
+              if (!tecnicoId) {
+                Alert.alert("Erro", "Técnico não identificado");
+                return;
+              }
+
+              const response = await fetch(
+                `${API_URL}/users/${jogador.id}/remover-do-clube?tecnico_id=${tecnicoId}`,
+                {
+                  method: "PATCH",
+                  headers: {
+                    "Content-Type": "application/json",
+                    accept: "application/json",
+                  },
+                }
+              );
+
+              if (response.ok) {
+                const data = await response.json();
+                Alert.alert("Sucesso", data.message);
+                // Recarregar informações do time
+                fetchTeamInfo();
+              } else {
+                const errorData = await response.json();
+                Alert.alert(
+                  "Erro",
+                  errorData.detail || "Não foi possível remover o jogador"
+                );
+              }
+            } catch (error) {
+              console.error("Erro ao remover jogador:", error);
+              Alert.alert("Erro", "Ocorreu um erro ao remover o jogador");
+            }
+          },
+        },
+      ]
+    );
+  };
+
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
@@ -246,8 +300,16 @@ export default function CoachMyTeam() {
           {teamInfo.usuarios.map((jogador, index) => (
             <View key={jogador.id} style={styles.playerCard}>
               <View style={styles.playerHeader}>
-                <Ionicons name="person" size={20} color="#1a41aa" />
-                <Text style={styles.playerName}>{jogador.nome}</Text>
+                <View style={styles.playerHeaderLeft}>
+                  <Ionicons name="person" size={20} color="#1a41aa" />
+                  <Text style={styles.playerName}>{jogador.nome}</Text>
+                </View>
+                <TouchableOpacity
+                  style={styles.removeButton}
+                  onPress={() => removerJogador(jogador)}
+                >
+                  <Ionicons name="trash" size={16} color="#fff" />
+                </TouchableOpacity>
               </View>
 
               <View style={styles.playerInfo}>
@@ -426,13 +488,27 @@ const styles = StyleSheet.create({
   playerHeader: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: 8,
+  },
+  playerHeaderLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
   },
   playerName: {
     fontSize: 16,
     fontWeight: "bold",
     color: "#333",
     marginLeft: 8,
+  },
+  removeButton: {
+    backgroundColor: "#f44336",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 6,
+    alignItems: "center",
+    justifyContent: "center",
   },
   playerInfo: {
     marginLeft: 28,
