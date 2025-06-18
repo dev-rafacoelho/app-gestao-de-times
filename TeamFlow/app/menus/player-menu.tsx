@@ -53,6 +53,14 @@ export default function PlayerMenu() {
     },
     {
       id: 4,
+      title: "Minhas Solicitações",
+      subtitle: "Ver histórico de solicitações",
+      icon: "document-text",
+      route: "/player/my-requests",
+      color: "#9c27b0",
+    },
+    {
+      id: 5,
       title: "Sair do Time",
       subtitle: "Deixar o time atual",
       icon: "exit",
@@ -70,6 +78,14 @@ export default function PlayerMenu() {
       icon: "search",
       route: "/player/find-teams",
       color: "#1a41aa",
+    },
+    {
+      id: 2,
+      title: "Minhas Solicitações",
+      subtitle: "Ver status das solicitações enviadas",
+      icon: "document-text",
+      route: "/player/my-requests",
+      color: "#9c27b0",
     },
   ];
 

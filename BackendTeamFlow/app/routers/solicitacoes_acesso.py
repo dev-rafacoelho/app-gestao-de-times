@@ -90,7 +90,30 @@ def listar_minhas_solicitacoes(
     solicitacoes = db.query(TeamAccessRequest).filter(
         TeamAccessRequest.jogador_id == user_id
     ).all()
-    return solicitacoes
+    
+    # Enriquecer com dados do clube
+    solicitacoes_com_dados = []
+    for solicitacao in solicitacoes:
+        clube = db.query(Clube).filter(Clube.id == solicitacao.clube_id).first()
+        
+        solicitacao_dict = {
+            "id": solicitacao.id,
+            "jogador_id": solicitacao.jogador_id,
+            "clube_id": solicitacao.clube_id,
+            "status": solicitacao.status,
+            "data_solicitacao": solicitacao.data_solicitacao,
+            "data_resposta": solicitacao.data_resposta,
+            "observacao": solicitacao.observacao,
+            "clube": {
+                "id": clube.id,
+                "nome": clube.nome,
+                "tecnico_id": clube.tecnico_id,
+                "procurando_jogadores": clube.procurando_jogadores
+            } if clube else None
+        }
+        solicitacoes_com_dados.append(solicitacao_dict)
+    
+    return solicitacoes_com_dados
 
 @router.get("/clube/{clube_id}", response_model=List[SolicitacaoAcessoResponse])
 def listar_solicitacoes_clube(
