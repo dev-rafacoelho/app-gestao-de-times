@@ -191,7 +191,7 @@ export default function NavigationBar() {
     return (
       <>
         <TouchableOpacity
-          style={[styles.fourButtonLayout, isTrainingsActive && styles.activeButton]}
+          style={[styles.leftButton, isTrainingsActive && styles.activeButton]}
           onPress={() => handleNavigation("/player/trainings")}
         >
           <Animated.View
@@ -210,11 +210,11 @@ export default function NavigationBar() {
               },
             ]}
           >
-            <Ionicons name="fitness" size={20} color={isTrainingsActive ? "#fff" : "#1a41aa"} />
+            <Ionicons name="fitness" size={24} color={isTrainingsActive ? "#fff" : "#1a41aa"} />
           </Animated.View>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.fourButtonLayout, isMyTeamActive && styles.activeButton]}
+          style={[styles.centerButton, isMyTeamActive && styles.activeButton]}
           onPress={() => handleNavigation("/player/my-team")}
         >
           <Animated.View
@@ -233,34 +233,11 @@ export default function NavigationBar() {
               },
             ]}
           >
-            <Ionicons name="people" size={20} color={isMyTeamActive ? "#fff" : "#1a41aa"} />
+            <Ionicons name="people" size={24} color={isMyTeamActive ? "#fff" : "#1a41aa"} />
           </Animated.View>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.fourButtonLayout, isMyRequestsActive && styles.activeButton]}
-          onPress={() => handleNavigation("/player/my-requests")}
-        >
-          <Animated.View
-            style={[
-              styles.iconContainer,
-              isMyRequestsActive && styles.activeIconContainer,
-              {
-                transform: [
-                  {
-                    scale: activeAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [0.9, 1],
-                    }),
-                  },
-                ],
-              },
-            ]}
-          >
-            <Ionicons name="document-text" size={20} color={isMyRequestsActive ? "#fff" : "#1a41aa"} />
-          </Animated.View>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.fourButtonLayout, isProfileActive && styles.activeButton]}
+          style={[styles.rightButton, isProfileActive && styles.activeButton]}
           onPress={() => handleNavigation("/player/profile")}
         >
           <Animated.View
@@ -281,7 +258,7 @@ export default function NavigationBar() {
           >
             <Ionicons
               name="person"
-              size={20}
+              size={24}
               color={isProfileActive ? "#fff" : "#1a41aa"}
             />
           </Animated.View>

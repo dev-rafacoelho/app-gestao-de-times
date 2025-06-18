@@ -45,22 +45,6 @@ export default function PlayerMenu() {
     },
     {
       id: 3,
-      title: "Procurar Times",
-      subtitle: "Procurar outro time",
-      icon: "search",
-      route: "/player/find-teams",
-      color: "#ff9800",
-    },
-    {
-      id: 4,
-      title: "Minhas Solicitações",
-      subtitle: "Ver histórico de solicitações",
-      icon: "document-text",
-      route: "/player/my-requests",
-      color: "#9c27b0",
-    },
-    {
-      id: 5,
       title: "Sair do Time",
       subtitle: "Deixar o time atual",
       icon: "exit",
