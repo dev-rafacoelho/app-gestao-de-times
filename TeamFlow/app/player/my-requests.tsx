@@ -170,7 +170,7 @@ export default function MyRequests() {
       case 'aprovado':
         return '#4CAF50';
       case 'rejeitado':
-        return '#f44336';
+        return '#2196F3';
       default:
         return '#666';
     }
@@ -183,7 +183,7 @@ export default function MyRequests() {
       case 'aprovado':
         return 'Aprovado - Você faz parte do time!';
       case 'rejeitado':
-        return 'Não aprovado';
+        return 'Nova oportunidade disponível';
       default:
         return status;
     }
@@ -196,7 +196,7 @@ export default function MyRequests() {
       case 'aprovado':
         return 'checkmark-circle';
       case 'rejeitado':
-        return 'close-circle';
+        return 'refresh-circle';
       default:
         return 'help-circle';
     }
@@ -259,8 +259,8 @@ export default function MyRequests() {
             style={styles.retryButton}
             onPress={() => abrirModalReenvio(solicitacao.clube)}
           >
-            <Ionicons name="refresh" size={16} color="#fff" />
-            <Text style={styles.retryButtonText}>Tentar Novamente</Text>
+            <Ionicons name="send" size={16} color="#fff" />
+            <Text style={styles.retryButtonText}>Solicitar Entrada</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -663,11 +663,16 @@ const styles = StyleSheet.create({
   retryButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1a41aa',
+    backgroundColor: '#2196F3',
     paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingVertical: 12,
     borderRadius: 8,
     gap: 6,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   retryButtonText: {
     color: '#fff',

@@ -161,7 +161,19 @@ export default function FindTeams() {
       console.log("Debug - Response data:", data);
 
       if (response.ok) {
-        setMyRequests((prev) => [...prev, data]);
+        // Atualizar ou adicionar a solicitação na lista
+        setMyRequests((prev) => {
+          const existingIndex = prev.findIndex(req => req.clube_id === teamId);
+          if (existingIndex >= 0) {
+            // Atualizar solicitação existente
+            const updated = [...prev];
+            updated[existingIndex] = data;
+            return updated;
+          } else {
+            // Adicionar nova solicitação
+            return [...prev, data];
+          }
+        });
         Alert.alert(
           "Solicitação Enviada",
           "Sua solicitação para entrar no time foi enviada com sucesso!"
@@ -222,10 +234,10 @@ export default function FindTeams() {
               styles.joinButton,
               requestStatus === "pendente" && styles.pendingButton,
               requestStatus === "aprovado" && styles.approvedButton,
-              requestStatus === "rejeitado" && styles.rejectedButton,
+              requestStatus === "rejeitado" && styles.retryButton,
             ]}
             onPress={() => handleRequestJoin(item.id)}
-            disabled={!!requestStatus || isRequesting}
+            disabled={(requestStatus === "pendente" || requestStatus === "aprovado") || isRequesting}
           >
             {isRequesting ? (
               <ActivityIndicator color="#fff" size="small" />
@@ -234,7 +246,10 @@ export default function FindTeams() {
             ) : requestStatus === "aprovado" ? (
               <Text style={styles.joinButtonText}>Solicitação Aprovada</Text>
             ) : requestStatus === "rejeitado" ? (
-              <Text style={styles.joinButtonText}>Solicitação Rejeitada</Text>
+              <View style={styles.retryButtonContent}>
+                <Ionicons name="refresh" size={16} color="#fff" style={styles.retryIcon} />
+                <Text style={styles.joinButtonText}>Tentar Novamente</Text>
+              </View>
             ) : (
               <Text style={styles.joinButtonText}>Solicitar Entrada</Text>
             )}
@@ -429,7 +444,15 @@ const styles = StyleSheet.create({
   approvedButton: {
     backgroundColor: "#4CAF50",
   },
-  rejectedButton: {
-    backgroundColor: "#F44336",
+  retryButton: {
+    backgroundColor: "#FF9800",
+  },
+  retryButtonContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  retryIcon: {
+    marginRight: 6,
   },
 });
