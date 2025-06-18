@@ -13,6 +13,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_URL } from "../../constants/Config";
+import NavigationBar from "../../components/NavigationBar";
 
 interface Usuario {
   nome: string;
@@ -282,6 +283,8 @@ export default function CoachMyTeam() {
           )}
         </View>
       </ScrollView>
+      
+      <NavigationBar />
     </SafeAreaView>
   );
 }

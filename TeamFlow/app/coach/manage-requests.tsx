@@ -1,20 +1,28 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView } from 'react-native';
+import NavigationBar from '../../components/NavigationBar';
 
 export default function ManageRequests() {
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Gerenciar Solicitações</Text>
-      <Text style={styles.subtitle}>Gerencie as solicitações de jogadores para seu time</Text>
-    </View>
+    <SafeAreaView style={styles.container}>
+      <View style={styles.content}>
+        <Text style={styles.title}>Gerenciar Solicitações</Text>
+        <Text style={styles.subtitle}>Gerencie as solicitações de jogadores para seu time</Text>
+      </View>
+      
+      <NavigationBar />
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
     backgroundColor: '#fff',
+  },
+  content: {
+    flex: 1,
+    padding: 20,
   },
   title: {
     fontSize: 24,

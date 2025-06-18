@@ -14,6 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_URL } from "../../constants/Config";
+import NavigationBar from "../../components/NavigationBar";
 
 interface Participacao {
   id: number;
@@ -244,6 +245,8 @@ export default function CoachTrainings() {
           </View>
         )}
       </ScrollView>
+      
+      <NavigationBar />
     </SafeAreaView>
   );
 }

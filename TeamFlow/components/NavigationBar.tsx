@@ -189,6 +189,11 @@ export default function NavigationBar() {
   };
 
   const renderCoachNavigation = () => {
+    // Se o técnico não tem clube, não mostra navegação
+    if (!clubeId) {
+      return null;
+    }
+
     const isMyTeamActive = pathname === "/coach/my-team";
     const isTrainingsActive = pathname === "/coach/trainings";
 
@@ -278,6 +283,11 @@ export default function NavigationBar() {
       </>
     );
   };
+
+  // Para técnicos sem clube, não renderiza a navegação
+  if (tipoUserId === 2 && !clubeId) {
+    return null;
+  }
 
   return (
     <View style={styles.container}>

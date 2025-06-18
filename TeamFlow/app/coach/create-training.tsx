@@ -14,6 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_URL } from "../../constants/Config";
+import NavigationBar from "../../components/NavigationBar";
 import DateTimePicker from "@react-native-community/datetimepicker";
 
 export default function CreateTraining() {
@@ -250,6 +251,8 @@ export default function CreateTraining() {
           </TouchableOpacity>
         </View>
       </ScrollView>
+      
+      <NavigationBar />
     </SafeAreaView>
   );
 }

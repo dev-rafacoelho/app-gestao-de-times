@@ -114,6 +114,7 @@ export default function Login() {
             }
             break;
           case 2: // Técnico
+            // Para técnicos, sempre vai para o menu que verificará se tem clube
             router.replace("/menus/coach-menu");
             break;
           default:

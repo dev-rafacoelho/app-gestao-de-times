@@ -1,19 +1,95 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
   StyleSheet,
   SafeAreaView,
   TouchableOpacity,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { API_URL } from "../../constants/Config";
 import NavigationBar from "../../components/NavigationBar";
 
 export default function CoachMenu() {
   const router = useRouter();
+  const [hasClube, setHasClube] = useState<boolean | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const menuItems = [
+  useEffect(() => {
+    checkCoachClub();
+  }, []);
+
+  const checkCoachClub = async () => {
+    try {
+      const userId = await AsyncStorage.getItem("user_id");
+      if (!userId) {
+        router.replace("/login");
+        return;
+      }
+
+      // Verificar se o técnico tem clube
+      const response = await fetch(`${API_URL}/clubes/meu-clube/${userId}`, {
+        method: "GET",
+        headers: {
+          accept: "application/json",
+        },
+      });
+
+      if (response.ok) {
+        const clubeData = await response.json();
+        console.log("Técnico tem clube:", clubeData);
+        setHasClube(true);
+        // Armazenar o clube_id se encontrado
+        await AsyncStorage.setItem("clube_id", String(clubeData.id));
+      } else {
+        console.log("Técnico não tem clube");
+        setHasClube(false);
+        // Remover clube_id se não tem clube
+        await AsyncStorage.removeItem("clube_id");
+      }
+    } catch (error) {
+      console.error("Erro ao verificar clube do técnico:", error);
+      setHasClube(false);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    Alert.alert(
+      "Confirmar Logout",
+      "Tem certeza que deseja sair?",
+      [
+        {
+          text: "Cancelar",
+          style: "cancel",
+        },
+        {
+          text: "Sair",
+          style: "destructive",
+          onPress: async () => {
+            // Limpar dados armazenados
+            await AsyncStorage.multiRemove([
+              "user_id",
+              "tipo_user_id",
+              "clube_id",
+              "user_profile",
+            ]);
+            router.replace("/login");
+          },
+        },
+      ]
+    );
+  };
+
+  const handleCreateClub = () => {
+    router.push("/coach/create-club");
+  };
+
+  const fullMenuItems = [
     {
       id: 1,
       title: "Gerenciar Treinos",
@@ -48,9 +124,50 @@ export default function CoachMenu() {
     },
   ];
 
-  const handleMenuPress = (route: string) => {
-    router.push(route);
+  const noClubMenuItems = [
+    {
+      id: 1,
+      title: "Criar Clube",
+      subtitle: "Crie seu clube para começar a gerenciar",
+      icon: "add-circle",
+      action: handleCreateClub,
+      color: "#1a41aa",
+    },
+    {
+      id: 2,
+      title: "Sair",
+      subtitle: "Fazer logout da conta",
+      icon: "log-out",
+      action: handleLogout,
+      color: "#f44336",
+    },
+  ];
+
+  const handleMenuPress = (item: any) => {
+    if (item.action) {
+      item.action();
+    } else if (item.route) {
+      router.push(item.route);
+    }
   };
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>Carregando...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const menuItems = hasClube ? fullMenuItems : noClubMenuItems;
+  const welcomeText = hasClube 
+    ? "Bem-vindo ao TeamFlow!" 
+    : "Crie seu clube para começar!";
+  const subText = hasClube 
+    ? "Gerencie seu time e treinos" 
+    : "Você precisa criar um clube antes de acessar as outras funcionalidades";
 
   return (
     <SafeAreaView style={styles.container}>
@@ -60,8 +177,8 @@ export default function CoachMenu() {
 
       <View style={styles.content}>
         <View style={styles.welcomeContainer}>
-          <Text style={styles.welcomeText}>Bem-vindo ao TeamFlow!</Text>
-          <Text style={styles.subText}>Gerencie seu time e treinos</Text>
+          <Text style={styles.welcomeText}>{welcomeText}</Text>
+          <Text style={styles.subText}>{subText}</Text>
         </View>
 
         <View style={styles.menuContainer}>
@@ -69,7 +186,7 @@ export default function CoachMenu() {
             <TouchableOpacity
               key={item.id}
               style={[styles.menuItem, { borderLeftColor: item.color }]}
-              onPress={() => handleMenuPress(item.route)}
+              onPress={() => handleMenuPress(item)}
             >
               <View style={styles.menuIconContainer}>
                 <Ionicons
@@ -162,5 +279,14 @@ const styles = StyleSheet.create({
   menuSubtitle: {
     fontSize: 14,
     color: "#666",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    fontSize: 18,
+    color: "#333",
   },
 });
