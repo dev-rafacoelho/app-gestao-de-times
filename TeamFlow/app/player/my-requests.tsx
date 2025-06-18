@@ -11,6 +11,8 @@ import {
   Alert,
   TextInput,
   Modal,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -387,46 +389,53 @@ export default function MyRequests() {
         visible={modalVisible}
         onRequestClose={() => setModalVisible(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>
-                Solicitar Novamente
-              </Text>
-              <TouchableOpacity
-                style={styles.modalCloseButton}
-                onPress={() => setModalVisible(false)}
-              >
-                <Ionicons name="close" size={24} color="#666" />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.modalBody}>
-              <View style={styles.clubeInfo}>
-                <Ionicons name="shield" size={20} color="#1a41aa" />
-                <Text style={styles.clubeNomeModal}>
-                  {selectedClube?.nome}
+        <KeyboardAvoidingView
+          style={styles.modalOverlay}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
+          <View style={styles.modalBackground}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>
+                  Solicitar Novamente
                 </Text>
+                <TouchableOpacity
+                  style={styles.modalCloseButton}
+                  onPress={() => setModalVisible(false)}
+                >
+                  <Ionicons name="close" size={24} color="#666" />
+                </TouchableOpacity>
               </View>
 
-              <Text style={styles.modalLabel}>
-                Escreva uma mensagem para sua nova solicitação:
-              </Text>
-              
-              <TextInput
-                style={styles.modalTextInput}
-                placeholder="Ex: Olá! Gostaria muito de fazer parte do time..."
-                value={observacao}
-                onChangeText={setObservacao}
-                multiline
-                numberOfLines={4}
-                textAlignVertical="top"
-                maxLength={500}
-              />
+              <ScrollView style={styles.modalScrollView}>
+                <View style={styles.modalBody}>
+                  <View style={styles.clubeInfo}>
+                    <Ionicons name="shield" size={20} color="#1a41aa" />
+                    <Text style={styles.clubeNomeModal}>
+                      {selectedClube?.nome}
+                    </Text>
+                  </View>
 
-              <Text style={styles.characterCount}>
-                {observacao.length}/500
-              </Text>
+                  <Text style={styles.modalLabel}>
+                    Escreva uma mensagem para sua nova solicitação:
+                  </Text>
+                  
+                  <TextInput
+                    style={styles.modalTextInput}
+                    placeholder="Ex: Olá! Gostaria muito de fazer parte do time..."
+                    value={observacao}
+                    onChangeText={setObservacao}
+                    multiline
+                    numberOfLines={3}
+                    textAlignVertical="top"
+                    maxLength={500}
+                  />
+
+                  <Text style={styles.characterCount}>
+                    {observacao.length}/500
+                  </Text>
+                </View>
+              </ScrollView>
 
               <View style={styles.modalActions}>
                 <TouchableOpacity
@@ -453,7 +462,7 @@ export default function MyRequests() {
               </View>
             </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       <NavigationBar />
@@ -668,15 +677,22 @@ const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalBackground: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
+  },
+  modalScrollView: {
+    maxHeight: 200,
   },
   modalContent: {
     backgroundColor: '#fff',
     borderRadius: 12,
     width: '100%',
-    maxHeight: '80%',
+    maxHeight: '60%',
+    maxWidth: 400,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -696,6 +712,7 @@ const styles = StyleSheet.create({
   },
   modalBody: {
     padding: 20,
+    paddingBottom: 10,
   },
   clubeNomeModal: {
     fontSize: 16,
@@ -715,7 +732,8 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
-    minHeight: 100,
+    minHeight: 80,
+    maxHeight: 120,
     backgroundColor: '#f9f9f9',
   },
   characterCount: {
@@ -728,6 +746,10 @@ const styles = StyleSheet.create({
   modalActions: {
     flexDirection: 'row',
     gap: 12,
+    padding: 20,
+    backgroundColor: '#fff',
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
   },
   modalCancelButton: {
     flex: 1,
