@@ -91,19 +91,24 @@ export default function Register() {
         return;
       }
 
-      // Validar data de nascimento
-      if (birthDate.split("/").length !== 3) {
-        alert("Por favor, insira uma data de nascimento válida no formato DD/MM/AAAA");
+      // Validar data de nascimento (mínimo básico)
+      if (!birthDate || !birthDate.includes("/")) {
+        alert("Por favor, insira uma data de nascimento no formato DD/MM/AAAA");
         return;
       }
 
       // Converter a data do formato DD/MM/YYYY para YYYY-MM-DD
-      const [day, month, year] = birthDate.split("/");
+      const dateParts = birthDate.split("/");
+      const [day, month, year] = dateParts;
+      
       if (!day || !month || !year || year.length !== 4) {
-        alert("Por favor, insira uma data de nascimento válida no formato DD/MM/AAAA");
+        alert("Data incompleta. Use o formato DD/MM/AAAA");
         return;
       }
+
       const formattedDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+      console.log("Data original:", birthDate);
+      console.log("Data formatada:", formattedDate);
 
       // Preparar dados para envio
       const userData = {
@@ -120,7 +125,7 @@ export default function Register() {
       // Fazer requisição para a API - tenta diferentes URLs em desenvolvimento
       const possibleUrls = __DEV__ 
         ? [
-            "http://10.0.2.2:8000", // Android Emulator
+            "https://teste-faculdade-backend.lvbgea.easypanel.host", // Android Emulator
             "http://127.0.0.1:8000", // Localhost
             "http://localhost:8000", // Localhost alternativo
             API_URL // URL de produção como fallback
