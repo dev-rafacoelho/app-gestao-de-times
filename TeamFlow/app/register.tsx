@@ -84,31 +84,79 @@ export default function Register() {
         return;
       }
 
+      // Validar formato do email
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        alert("Por favor, insira um email válido");
+        return;
+      }
+
+      // Validar data de nascimento
+      if (birthDate.split("/").length !== 3) {
+        alert("Por favor, insira uma data de nascimento válida no formato DD/MM/AAAA");
+        return;
+      }
+
       // Converter a data do formato DD/MM/YYYY para YYYY-MM-DD
       const [day, month, year] = birthDate.split("/");
-      const formattedDate = `${year}-${month}-${day}`;
+      if (!day || !month || !year || year.length !== 4) {
+        alert("Por favor, insira uma data de nascimento válida no formato DD/MM/AAAA");
+        return;
+      }
+      const formattedDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
 
       // Preparar dados para envio
       const userData = {
         nome: fullName,
-        email,
+        email: email.toLowerCase().trim(),
         data_nascimento: formattedDate,
         telefone: phone.replace(/[^0-9]/g, ""), // Remove caracteres não numéricos
         senha: password,
         tipo_user_id: userType === "tecnico" ? 2 : 1, // 2 para técnico, 1 para jogador
       };
 
-      // Fazer requisição para a API
-      const response = await fetch(`${API_URL}/auth/register`, {
-        method: "POST",
-        headers: {
-          accept: "application/json",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(userData),
-      });
+      console.log("Dados sendo enviados:", userData);
 
-      const responseData = await response.json();
+      // Fazer requisição para a API - tenta diferentes URLs em desenvolvimento
+      const possibleUrls = __DEV__ 
+        ? [
+            "http://10.0.2.2:8000", // Android Emulator
+            "http://127.0.0.1:8000", // Localhost
+            "http://localhost:8000", // Localhost alternativo
+            API_URL // URL de produção como fallback
+          ]
+        : [API_URL];
+
+      let response;
+      let responseData;
+      let lastError;
+
+      for (const apiUrl of possibleUrls) {
+        try {
+          console.log("Tentando URL:", `${apiUrl}/auth/register`);
+          
+          response = await fetch(`${apiUrl}/auth/register`, {
+            method: "POST",
+            headers: {
+              accept: "application/json",
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(userData),
+          });
+
+          responseData = await response.json();
+          console.log("Resposta da API:", responseData);
+          break; // Se chegou aqui, a requisição funcionou
+        } catch (error) {
+          console.log(`Falha na URL ${apiUrl}:`, error);
+          lastError = error;
+          continue; // Tenta a próxima URL
+        }
+      }
+
+      if (!response) {
+        throw lastError || new Error("Não foi possível conectar com o servidor");
+      }
 
       if (!response.ok) {
         throw new Error(responseData.detail || "Erro ao registrar usuário");
@@ -119,7 +167,12 @@ export default function Register() {
       router.replace("/login");
     } catch (error) {
       console.error("Erro no registro:", error);
-      alert(error.message || "Erro ao registrar usuário");
+      const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
+      if (errorMessage.includes("Network request failed") || errorMessage.includes("fetch")) {
+        alert("Erro de conexão. Verifique se o servidor está rodando e tente novamente.");
+      } else {
+        alert(errorMessage || "Erro ao registrar usuário");
+      }
     }
   };
 
