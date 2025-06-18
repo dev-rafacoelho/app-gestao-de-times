@@ -53,15 +53,21 @@ def criar_solicitacao(
         raise HTTPException(status_code=404, detail=f"Clube não encontrado (ID: {solicitacao.clube_id})")
     
     # Verificar se já existe uma solicitação pendente
-    solicitacao_existente = db.query(TeamAccessRequest).filter(
+    solicitacao_pendente = db.query(TeamAccessRequest).filter(
         TeamAccessRequest.jogador_id == user_id,
         TeamAccessRequest.clube_id == solicitacao.clube_id,
         TeamAccessRequest.status == "pendente"
     ).first()
     
-    if solicitacao_existente:
+    if solicitacao_pendente:
         logger.warning(f"Já existe solicitação pendente para user_id: {user_id} e clube_id: {solicitacao.clube_id}")
         raise HTTPException(status_code=400, detail="Já existe uma solicitação pendente para este clube")
+    
+    # Verificar se o jogador já foi aprovado para este clube
+    jogador = db.query(User).filter(User.id == user_id).first()
+    if jogador and jogador.clube_id == solicitacao.clube_id:
+        logger.warning(f"Jogador {user_id} já faz parte do clube {solicitacao.clube_id}")
+        raise HTTPException(status_code=400, detail="Você já faz parte deste clube")
     
     # Criar nova solicitação
     nova_solicitacao = TeamAccessRequest(

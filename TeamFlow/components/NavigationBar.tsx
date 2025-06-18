@@ -72,6 +72,7 @@ export default function NavigationBar() {
   const isProfileActive =
     pathname === "/player/profile" || pathname === "/coach/profile";
   const isFindTeamsActive = pathname === "/player/find-teams";
+  const isMyRequestsActive = pathname === "/player/my-requests";
 
   const handleNavigation = (route: string) => {
     // Se estiver navegando para solicitações, atualizar contador
@@ -98,10 +99,7 @@ export default function NavigationBar() {
       return (
         <>
           <TouchableOpacity
-            style={[
-              styles.centerButton,
-              isFindTeamsActive && styles.activeButton,
-            ]}
+            style={[styles.leftButton, isFindTeamsActive && styles.activeButton]}
             onPress={() => handleNavigation("/player/find-teams")}
           >
             <Animated.View
@@ -127,6 +125,35 @@ export default function NavigationBar() {
               />
             </Animated.View>
           </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={[styles.centerButton, isMyRequestsActive && styles.activeButton]}
+            onPress={() => handleNavigation("/player/my-requests")}
+          >
+            <Animated.View
+              style={[
+                styles.iconContainer,
+                isMyRequestsActive && styles.activeIconContainer,
+                {
+                  transform: [
+                    {
+                      scale: activeAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [0.9, 1],
+                      }),
+                    },
+                  ],
+                },
+              ]}
+            >
+              <Ionicons
+                name="document-text"
+                size={24}
+                color={isMyRequestsActive ? "#fff" : "#1a41aa"}
+              />
+            </Animated.View>
+          </TouchableOpacity>
+
           <TouchableOpacity
             style={[styles.rightButton, isProfileActive && styles.activeButton]}
             onPress={() => handleNavigation("/player/profile")}
@@ -158,48 +185,82 @@ export default function NavigationBar() {
       );
     }
 
+    const isTrainingsActive = pathname === "/player/trainings";
+    const isMyTeamActive = pathname === "/player/my-team";
+
     return (
       <>
         <TouchableOpacity
-          style={styles.leftButton}
+          style={[styles.fourButtonLayout, isTrainingsActive && styles.activeButton]}
           onPress={() => handleNavigation("/player/trainings")}
         >
           <Animated.View
-            style={{
-              transform: [
-                {
-                  scale: activeAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [0.9, 1],
-                  }),
-                },
-              ],
-            }}
+            style={[
+              styles.iconContainer,
+              isTrainingsActive && styles.activeIconContainer,
+              {
+                transform: [
+                  {
+                    scale: activeAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0.9, 1],
+                    }),
+                  },
+                ],
+              },
+            ]}
           >
-            <Ionicons name="fitness" size={24} color="#1a41aa" />
+            <Ionicons name="fitness" size={20} color={isTrainingsActive ? "#fff" : "#1a41aa"} />
           </Animated.View>
         </TouchableOpacity>
         <TouchableOpacity
-          style={styles.centerButton}
+          style={[styles.fourButtonLayout, isMyTeamActive && styles.activeButton]}
           onPress={() => handleNavigation("/player/my-team")}
         >
           <Animated.View
-            style={{
-              transform: [
-                {
-                  scale: activeAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [0.9, 1],
-                  }),
-                },
-              ],
-            }}
+            style={[
+              styles.iconContainer,
+              isMyTeamActive && styles.activeIconContainer,
+              {
+                transform: [
+                  {
+                    scale: activeAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0.9, 1],
+                    }),
+                  },
+                ],
+              },
+            ]}
           >
-            <Ionicons name="people" size={24} color="#1a41aa" />
+            <Ionicons name="people" size={20} color={isMyTeamActive ? "#fff" : "#1a41aa"} />
           </Animated.View>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.rightButton, isProfileActive && styles.activeButton]}
+          style={[styles.fourButtonLayout, isMyRequestsActive && styles.activeButton]}
+          onPress={() => handleNavigation("/player/my-requests")}
+        >
+          <Animated.View
+            style={[
+              styles.iconContainer,
+              isMyRequestsActive && styles.activeIconContainer,
+              {
+                transform: [
+                  {
+                    scale: activeAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0.9, 1],
+                    }),
+                  },
+                ],
+              },
+            ]}
+          >
+            <Ionicons name="document-text" size={20} color={isMyRequestsActive ? "#fff" : "#1a41aa"} />
+          </Animated.View>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.fourButtonLayout, isProfileActive && styles.activeButton]}
           onPress={() => handleNavigation("/player/profile")}
         >
           <Animated.View
@@ -220,7 +281,7 @@ export default function NavigationBar() {
           >
             <Ionicons
               name="person"
-              size={24}
+              size={20}
               color={isProfileActive ? "#fff" : "#1a41aa"}
             />
           </Animated.View>

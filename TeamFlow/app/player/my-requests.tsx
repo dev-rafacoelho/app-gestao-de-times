@@ -8,6 +8,9 @@ import {
   RefreshControl,
   ActivityIndicator,
   TouchableOpacity,
+  Alert,
+  TextInput,
+  Modal,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -38,15 +41,24 @@ export default function MyRequests() {
   const [solicitacoes, setSolicitacoes] = useState<MinhasSolicitacoes[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedClube, setSelectedClube] = useState<Clube | null>(null);
+  const [observacao, setObservacao] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [hasTeam, setHasTeam] = useState<boolean | null>(null);
 
   const fetchMinhasSolicitacoes = async () => {
     try {
       const userId = await AsyncStorage.getItem('user_id');
+      const clubeId = await AsyncStorage.getItem('clube_id');
 
       if (!userId) {
         console.error('User ID não encontrado');
         return;
       }
+
+      // Verificar se o jogador tem time
+      setHasTeam(!!clubeId);
 
       const response = await fetch(
         `${API_URL}/solicitacoes-acesso/minhas-solicitacoes?user_id=${userId}`,
@@ -79,6 +91,70 @@ export default function MyRequests() {
   const onRefresh = () => {
     setRefreshing(true);
     fetchMinhasSolicitacoes();
+  };
+
+  const handleReenviarSolicitacao = async () => {
+    if (!selectedClube || !observacao.trim()) {
+      Alert.alert('Erro', 'Por favor, adicione uma mensagem para sua solicitação');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const userId = await AsyncStorage.getItem('user_id');
+
+      if (!userId) {
+        Alert.alert('Erro', 'Usuário não identificado');
+        return;
+      }
+
+      const response = await fetch(
+        `${API_URL}/solicitacoes-acesso/?user_id=${userId}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            accept: 'application/json',
+          },
+          body: JSON.stringify({
+            clube_id: selectedClube.id,
+            observacao: observacao.trim(),
+          }),
+        }
+      );
+
+      if (response.ok) {
+        Alert.alert(
+          'Sucesso!',
+          'Nova solicitação enviada com sucesso!',
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                setModalVisible(false);
+                setObservacao('');
+                setSelectedClube(null);
+                fetchMinhasSolicitacoes(); // Recarregar lista
+              },
+            },
+          ]
+        );
+      } else {
+        const errorData = await response.json();
+        Alert.alert('Erro', errorData.detail || 'Não foi possível enviar a solicitação');
+      }
+    } catch (error) {
+      console.error('Erro ao reenviar solicitação:', error);
+      Alert.alert('Erro', 'Erro de conexão');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const abrirModalReenvio = (clube: Clube) => {
+    setSelectedClube(clube);
+    setObservacao('');
+    setModalVisible(true);
   };
 
   const formatDate = (dateString: string) => {
@@ -174,6 +250,18 @@ export default function MyRequests() {
           </Text>
         </View>
       )}
+
+      {solicitacao.status === 'rejeitado' && solicitacao.clube && (
+        <View style={styles.rejectedActions}>
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={() => abrirModalReenvio(solicitacao.clube)}
+          >
+            <Ionicons name="refresh" size={16} color="#fff" />
+            <Text style={styles.retryButtonText}>Tentar Novamente</Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </View>
   );
 
@@ -187,7 +275,9 @@ export default function MyRequests() {
           >
             <Ionicons name="arrow-back" size={24} color="#fff" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Minhas Solicitações</Text>
+          <Text style={styles.headerTitle}>
+            {hasTeam === false ? 'Solicitações de Times' : 'Minhas Solicitações'}
+          </Text>
         </View>
         
         <View style={styles.loadingContainer}>
@@ -240,8 +330,29 @@ export default function MyRequests() {
                 <Text style={styles.statLabel}>Rejeitadas</Text>
               </View>
             </View>
+
+            {hasTeam === false && solicitacoes.filter(s => s.status === 'rejeitado').length > 0 && (
+              <>
+                <View style={styles.rejectedSection}>
+                  <View style={styles.rejectedHeader}>
+                    <Ionicons name="refresh-circle" size={24} color="#ff9800" />
+                    <Text style={styles.rejectedTitle}>Solicitações para Tentar Novamente</Text>
+                  </View>
+                  <Text style={styles.rejectedSubtext}>
+                    Essas solicitações foram rejeitadas, mas você pode tentar novamente!
+                  </Text>
+                </View>
+                
+                {solicitacoes
+                  .filter(s => s.status === 'rejeitado')
+                  .sort((a, b) => new Date(b.data_solicitacao).getTime() - new Date(a.data_solicitacao).getTime())
+                  .map(renderSolicitacao)}
+              </>
+            )}
             
-            <Text style={styles.sectionTitle}>Histórico de Solicitações</Text>
+            <Text style={styles.sectionTitle}>
+              {hasTeam === false ? 'Todas as Solicitações' : 'Histórico de Solicitações'}
+            </Text>
             {solicitacoes
               .sort((a, b) => new Date(b.data_solicitacao).getTime() - new Date(a.data_solicitacao).getTime())
               .map(renderSolicitacao)}
@@ -249,19 +360,101 @@ export default function MyRequests() {
         ) : (
           <View style={styles.emptyContainer}>
             <Ionicons name="document-outline" size={80} color="#ccc" />
-            <Text style={styles.emptyText}>Nenhuma solicitação encontrada</Text>
+            <Text style={styles.emptyText}>
+              {hasTeam === false ? 'Você ainda não tem solicitações' : 'Nenhuma solicitação encontrada'}
+            </Text>
             <Text style={styles.emptySubText}>
-              Quando você solicitar entrada em times, elas aparecerão aqui
+              {hasTeam === false 
+                ? 'Procure times que estão aceitando jogadores e envie sua solicitação!'
+                : 'Quando você solicitar entrada em times, elas aparecerão aqui'
+              }
             </Text>
             <TouchableOpacity
               style={styles.findTeamsButton}
               onPress={() => router.push('/player/find-teams')}
             >
-              <Text style={styles.findTeamsButtonText}>Procurar Times</Text>
+              <Text style={styles.findTeamsButtonText}>
+                {hasTeam === false ? 'Encontrar Times' : 'Procurar Times'}
+              </Text>
             </TouchableOpacity>
           </View>
         )}
       </ScrollView>
+
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>
+                Solicitar Novamente
+              </Text>
+              <TouchableOpacity
+                style={styles.modalCloseButton}
+                onPress={() => setModalVisible(false)}
+              >
+                <Ionicons name="close" size={24} color="#666" />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.modalBody}>
+              <View style={styles.clubeInfo}>
+                <Ionicons name="shield" size={20} color="#1a41aa" />
+                <Text style={styles.clubeNomeModal}>
+                  {selectedClube?.nome}
+                </Text>
+              </View>
+
+              <Text style={styles.modalLabel}>
+                Escreva uma mensagem para sua nova solicitação:
+              </Text>
+              
+              <TextInput
+                style={styles.modalTextInput}
+                placeholder="Ex: Olá! Gostaria muito de fazer parte do time..."
+                value={observacao}
+                onChangeText={setObservacao}
+                multiline
+                numberOfLines={4}
+                textAlignVertical="top"
+                maxLength={500}
+              />
+
+              <Text style={styles.characterCount}>
+                {observacao.length}/500
+              </Text>
+
+              <View style={styles.modalActions}>
+                <TouchableOpacity
+                  style={styles.modalCancelButton}
+                  onPress={() => setModalVisible(false)}
+                >
+                  <Text style={styles.modalCancelText}>Cancelar</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.modalSubmitButton, submitting && styles.modalSubmitButtonDisabled]}
+                  onPress={handleReenviarSolicitacao}
+                  disabled={submitting || !observacao.trim()}
+                >
+                  {submitting ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <>
+                      <Ionicons name="send" size={16} color="#fff" />
+                      <Text style={styles.modalSubmitText}>Enviar</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       <NavigationBar />
     </SafeAreaView>
@@ -453,5 +646,142 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  rejectedActions: {
+    marginTop: 12,
+    alignItems: 'center',
+  },
+  retryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1a41aa',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 8,
+    gap: 6,
+  },
+  retryButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    width: '100%',
+    maxHeight: '80%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  modalCloseButton: {
+    padding: 4,
+  },
+  modalBody: {
+    padding: 20,
+  },
+  clubeNomeModal: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+    marginLeft: 8,
+  },
+  modalLabel: {
+    fontSize: 16,
+    color: '#333',
+    marginBottom: 12,
+    marginTop: 20,
+  },
+  modalTextInput: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    minHeight: 100,
+    backgroundColor: '#f9f9f9',
+  },
+  characterCount: {
+    textAlign: 'right',
+    color: '#666',
+    fontSize: 12,
+    marginTop: 4,
+    marginBottom: 20,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  modalCancelButton: {
+    flex: 1,
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    alignItems: 'center',
+  },
+  modalCancelText: {
+    color: '#666',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  modalSubmitButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#1a41aa',
+    padding: 12,
+    borderRadius: 8,
+    gap: 6,
+  },
+  modalSubmitButtonDisabled: {
+    backgroundColor: '#ccc',
+  },
+  modalSubmitText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  rejectedSection: {
+    backgroundColor: '#fff3e0',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+    borderLeftWidth: 4,
+    borderLeftColor: '#ff9800',
+  },
+  rejectedHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  rejectedTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#e65100',
+    marginLeft: 8,
+  },
+  rejectedSubtext: {
+    fontSize: 14,
+    color: '#ef6c00',
+    lineHeight: 20,
   },
 }); 
